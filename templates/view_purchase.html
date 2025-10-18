@@ -1,0 +1,35 @@
+{% extends 'base.html' %}
+
+{% block title %}查看采购表{% endblock %}
+
+{% block content %}
+    <h2 class="my-4">采购表</h2>
+    <table class="table table-bordered">
+        <thead>
+            <tr>
+                <th>采购id</th>
+                <th>日期</th>
+                <th>供货商</th>
+                <th>发票号</th>
+                <th>支付方式</th>
+                <th>操作员</th>
+                <th>操作</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for row in purchase %}
+            <tr>
+                <td>{{ row[0] }}</td>  <!-- id -->
+                <td>{{ row[1] }}</td>  <!-- date -->
+                <td>{{ row[2] }}</td>  <!-- supplier -->
+                <td>{{ row[3] }}</td>  <!-- invoice -->
+                <td>{{ row[4] }}</td>  <!-- payway -->
+                <td>{{ row[5] }}</td>  <!-- username -->
+                <td>
+                    <a href="{{ url_for('view_purchase_order', purchase_id=row[0]) }}">查看</a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+{% endblock %}

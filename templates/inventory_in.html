@@ -1,0 +1,399 @@
+{% extends "base.html" %}
+
+{% block title %}新增入库单{% endblock %}
+
+{% block content %}
+
+<div class="container-fluid">
+    <h1 class="mt-4">新增入库单</h1>
+
+    <form action="{{ url_for('inventory_in') }}" method="POST">
+        <!-- Inventory In Information -->
+        <h3>入库信息</h3>
+        <div class="form-group">
+            <label for="inventory_in_id">入库单号</label>
+            <input type="text" class="form-control" id="inventory_in_id" name="inventory_in_id" value="{{ inventory_in_id }}" readonly>
+        </div>
+        <div class="form-group">
+            <label for="in_type">入库类型</label>
+            <select class="form-control" id="in_type" name="in_type" required>
+                <option value="purchase" {% if '/purchase' in request.path or (not '/produce' in request.path and not '/return' in request.path) %}selected{% endif %}>采购</option>
+                <option value="produce" {% if '/production' in request.path %}selected{% endif %}>生产</option>
+                <option value="exchange_return" {% if '/exchange_return' in request.path %}selected{% endif %}>退回</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label for="date">入库日期</label>
+            <input type="date" class="form-control" id="date" name="date" value="{{ today }}" required>
+        </div>
+        <div class="form-group">
+            <label for="corresponding_order">对应单号（生产）/发票号（采购）/退货审批id</label>
+            <input type="text" class="form-control" id="corresponding_order" name="corresponding_order"
+            value="{% if '/production' in request.path %}{{ produce_data.produce_source }}
+                   {% elif '/purchase' in request.path %}{{ purchase_data2['invoice']}}
+                    {% elif '/exchange_return' in request.path %}exchange_return_id_{{ exchange_return_data1['exchange_return_id'] }}
+                    {% else %}{% endif %}" required>
+        </div>
+        <div class="form-group">
+            <label for="user_name">操作员</label>
+            <input type="text" class="form-control" id="user_name" name="user_name" value="{{ current_user.username }}" readonly>
+        </div>
+
+        <!-- Inventory In Order Information -->
+        <h3>入库内容</h3>
+        <div id="inventory_in_order_items">
+            <table class="table table-bordered">
+                <thead>
+                    <tr>
+                        <th style="width: 34%;">产品名称</th>
+                        <th style="width: 12%;">应入数量</th>
+                        <th style="width: 12%;">验收数量</th>
+                        <th style="width: 12%;">差额</th>
+                        <th style="width: 20%;">溯源码</th>
+                        <th style="width: 10%;">二维码</th>
+                    </tr>
+                </thead>
+                <tbody id="product_table_body">
+                    {% if '/purchase' in request.path %}
+                        {% for item in purchase_data %}
+                        <tr>
+                            <td>
+                                <select class="form-control product-select" name="product_sku[]" onchange="updateProductName(this)">
+                                    <option value="">请选择SKU-产品名称</option>
+                                    {% for product in products %}
+                                        <option value="{{ product['sku'] }}" data-name="{{ product['item'] }}"
+                                            {% if ("/purchase" in request.path and product['item'] == item.product_name)  %}
+                                                selected
+                                            {% endif %}>
+                                            {{ product['sku'] }} - {{ product['item'] }}
+                                        </option>
+                                    {% endfor %}
+                                </select>                  
+                            </td>
+                            <td>
+                                <input type="number" class="form-control" name="ideal_quantity[]" 
+                                value="{{ item.quantity }}" 
+                                required>
+                            </td>
+                            <td><input type="number" class="form-control" name="true_quantity[]" min="1" required></td>
+                            <td><input type="number" class="form-control" name="diff[]" readonly required></td>
+                            <td><input type="text" class="form-control" name="source_id[]" value="{{produce_data.produce_source}}" readonly></td>
+                            <td><img class="qrcode" style="display:none; width:80px;" /></td>
+                            <td>
+                                <button type="button" class="btn btn-danger btn-sm" onclick="deleteRow(this)" {% if "/production" in request.path or "/purchase" in request.path %}disabled{% endif %}>删除</button>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    {% elif '/production' in request.path %}
+                            <tr>
+                        <td>
+                            <select class="form-control product-select" name="product_sku[]" onchange="updateProductName(this)">
+                                <option value="">请选择SKU-产品名称</option>
+                                {% for product in products %}
+                                <option value="{{ product['sku'] }}" data-name="{{ product['item'] }}"
+                                    {% if ("/production" in request.path and product['item'] == produce_data.product_name)  %}
+                                        selected
+                                    {% endif %}>
+                                    {{ product['sku'] }} - {{ product['item'] }}
+                                </option>
+                                {% endfor %}
+                            </select>                           
+                        </td>
+                        <td>
+                            <input type="number" class="form-control" name="ideal_quantity[]" 
+                            value="{% if '/production' in request.path %}{{ produce_data.plan_quantity }}{% else %}0{% endif %}" 
+                            required>
+                        </td>
+                        <td><input type="number" class="form-control" name="true_quantity[]" min="1" required></td>
+                        <td><input type="number" class="form-control" name="diff[]" readonly required></td>
+                        <td><input type="text" class="form-control" name="source_id[]" value="{{produce_data.produce_source}}" readonly></td>
+                        <td><img class="qrcode" style="display:none; width:80px;" /></td>
+                        <td>
+                            <button type="button" class="btn btn-danger btn-sm" onclick="deleteRow(this)" {% if "/production" in request.path or "/purchase" in request.path %}disabled{% endif %}>删除</button>
+                        </td>
+                    </tr>
+                    {% elif '/exchange_return' in request.path %}
+                    {% for item in exchange_return_data2 %}
+                    <tr>
+                        <td>
+                            <select class="form-control product-select" name="product_sku[]" onchange="updateProductName(this)">
+                                <option value="">请选择SKU-产品名称</option> <!-- Placeholder -->
+                                {% for product in products %}
+                                <option value="{{ product['sku'] }}" data-name="{{ product['item'] }}"
+                                    {% if "/exchange_return" in request.path and product['item'] == item.product_name %}
+                                        selected
+                                    {% endif %}>
+                                    {{ product['sku'] }} - {{ product['item'] }}
+                                </option>
+                                {% endfor %}
+                            </select>                           
+                        </td>
+                        
+                        <td>
+                            <input type="number" class="form-control" name="ideal_quantity[]" 
+                            value="{% if '/exchange_return' in request.path %}{{ item.quantity }}{% else %}0{% endif %}" 
+                            required>
+                        </td>
+                        <td><input type="number" class="form-control" name="true_quantity[]" min="1" required></td>
+                        <td><input type="number" class="form-control" name="diff[]" readonly required></td>
+                        <td><input type="text" class="form-control" name="source_id[]" value="{{produce_data.produce_source}}" readonly></td>
+                        <td><img class="qrcode" style="display:none; width:80px;" /></td>
+                        <td>
+                            <button type="button" class="btn btn-danger btn-sm" onclick="deleteRow(this)" {% if "/production" in request.path or "/purchase" in request.path %}disabled{% endif %}>删除</button>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                    {% else %}
+                    <tr>      
+                        <td>
+                            <select class="form-control product-select" name="product_sku[]" onchange="updateProductName(this)">
+                                <option value="">请选择SKU-产品名称</option> <!-- Placeholder -->
+                                {% for product in products %}
+                                <option value="{{ product['sku'] }}" data-name="{{ product['item'] }}">
+                                    {{ product['sku'] }} - {{ product['item'] }}
+                                </option>                                
+                                {% endfor %}
+                            </select>                        
+                        </td>
+                        <td>
+                            <input type="number" class="form-control" name="ideal_quantity[]" 
+                            value="{% if '/exchange_return' in request.path %}{{ item.quantity }}{% else %}0{% endif %}" 
+                            required>
+                        </td>
+                        <td><input type="number" class="form-control" name="true_quantity[]" min="1" required></td>
+                        <td><input type="number" class="form-control" name="diff[]" readonly required></td>
+                        <td><input type="text" class="form-control" name="source_id[]" value="{{produce_data.produce_source}}" readonly></td>
+                        <td><img class="qrcode" style="display:none; width:80px;" /></td>
+                        <td>
+                            <button type="button" class="btn btn-danger btn-sm" onclick="deleteRow(this)" {% if "/production" in request.path or "/purchase" in request.path %}disabled{% endif %}>删除</button>
+                        </td>
+                    </tr>
+                    {% endif %}
+
+                </tbody>
+            </table>
+        </div>
+
+        <button type="button" id="add_product" class="btn btn-info mb-3">添加产品</button>
+
+        <div class="d-flex mt-4">
+            <button type="submit" class="btn btn-primary btn-lg">提交</button>
+        </div>
+    </form>
+</div>
+
+<style>
+#add_product:disabled {
+    background-color: #d6d6d6; /* Gray background */
+    color: #a2a2a2; /* Gray text color */
+    cursor: not-allowed; /* Change cursor to indicate that it is not clickable */
+}</style>
+
+<!-- JavaScript Section -->
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const addProductButton = document.getElementById('add_product');
+        // Trigger QR code generation for initial load
+        const inventoryInId = document.getElementById('inventory_in_id').value;
+        const selectedDate = new Date(document.getElementById('date').value);
+        const year = selectedDate.getFullYear();
+        const month = String(selectedDate.getMonth() + 1).padStart(2, '0');
+        const day = String(selectedDate.getDate()).padStart(2, '0');
+        const batchNumber = inventoryInId.slice(-3);
+
+        const rows = document.querySelectorAll('#product_table_body tr');
+        rows.forEach(row => {
+            const sku = row.querySelector('select[name="product_sku[]"]').value;
+            const sourceIdField = row.querySelector('input[name="source_id[]"]');
+            const qrcodeImg = row.querySelector('.qrcode');
+
+            if (sku && inventoryInId) {
+                const sourceId = `${sku}${year}${month}${day}${batchNumber}`;
+                sourceIdField.value = sourceId;
+                if (qrcodeImg) {
+                    qrcodeImg.src = `/generate_qrcode/${encodeURIComponent(sourceId)}`;
+                    qrcodeImg.style.display = 'block';
+                }
+            }
+            if (!inventoryInId) {
+    const selectedDate = new Date(document.getElementById('date').value);
+    const year = selectedDate.getFullYear();
+    const month = String(selectedDate.getMonth() + 1).padStart(2, '0');
+    const day = String(selectedDate.getDate() + 1).padStart(2, '0');
+
+    fetch(`/generate_inventory_in_id/${year}/${month}/${day}`)
+        .then(response => response.json())
+        .then(data => {
+            document.getElementById('inventory_in_id').value = data.inventory_in_id;
+            const batchNumber = data.inventory_in_id.slice(-3);
+
+            const rows = document.querySelectorAll('#product_table_body tr');
+            rows.forEach(row => {
+                const sku = row.querySelector('select[name="product_sku[]"]').value;
+                const sourceIdField = row.querySelector('input[name="source_id[]"]');
+                const qrcodeImg = row.querySelector('.qrcode');
+
+                if (sku) {
+                    const sourceId = `${sku}${year}${month}${day}${batchNumber}`;
+                    sourceIdField.value = sourceId;
+                    if (qrcodeImg) {
+                        qrcodeImg.src = `/generate_qrcode/${encodeURIComponent(sourceId)}`;
+                        qrcodeImg.style.display = 'block';
+                    }
+                }
+            });
+        });
+}
+    });
+        // Check the current URL
+        const currentURL = window.location.pathname;
+
+        // Disable the button if the URL contains 'inventory_in/production/'
+        if (currentURL.includes('/production')||currentURL.includes('/purchase')||currentURL.includes('/exchange_return')) {
+            addProductButton.disabled = true;
+        } else {
+            // Enable the button if the URL is 'inventory_in'
+            addProductButton.disabled = false;
+        }
+});
+    // Function to calculate the difference and update the acceptance quantity
+    function updateDifference(row) {
+    const idealQuantity = parseFloat(row.querySelector('[name="ideal_quantity[]"]').value);
+    const trueQuantity = parseFloat(row.querySelector('[name="true_quantity[]"]').value);
+
+    if (!isNaN(idealQuantity) && !isNaN(trueQuantity)) {
+        // Calculate the difference (差额)
+        const diff = idealQuantity - trueQuantity;
+        row.querySelector('[name="diff[]"]').value = diff;
+    }
+    }
+    document.getElementById('add_product').addEventListener('click', function () {
+        const newRow = document.createElement('tr');
+        newRow.innerHTML = `
+            <tr>      
+                        <td>
+                            <select class="form-control product-select" name="product_sku[]" onchange="updateProductName(this)">
+                                <option value="">请选择SKU-产品名称</option> <!-- Placeholder -->
+                                {% for product in products %}
+                                <option value="{{ product['sku'] }}" data-name="{{ product['item'] }}"
+                                    {% if "/exchange_return" in request.path and product['item'] == exchange_return_data2.product_name %}
+                                        selected
+                                    {% endif %}>
+                                    {{ product['sku'] }} - {{ product['item'] }}
+                                </option>
+                                {% endfor %}
+                            </select>                           
+                        </td>
+                        <td>
+                            <input type="number" class="form-control" name="ideal_quantity[]" 
+                            value="{% if '/exchange_return' in request.path %}{{ exchange_return_data2.quantity }}{% else %}0{% endif %}" 
+                            required>
+                        </td>
+                        <td><input type="number" class="form-control" name="true_quantity[]" min="1" required></td>
+                        <td><input type="number" class="form-control" name="diff[]" readonly required></td>
+                        <td><input type="text" class="form-control" name="source_id[]" value="{{produce_data.produce_source}}" readonly></td>
+                        <td><img class="qrcode" style="display:none; width:80px;" /></td>
+                        <td>
+                            <button type="button" class="btn btn-danger btn-sm" onclick="deleteRow(this)" {% if "/production" in request.path or "/purchase" in request.path %}disabled{% endif %}>删除</button>
+                        </td>
+                    </tr>
+        `;
+        document.getElementById('product_table_body').appendChild(newRow);
+        // Optional: trigger change if SKU preselected
+
+        newRow.querySelector('select[name="product_sku[]"]').dispatchEvent(new Event('change'));
+    });
+    // delete row
+    function deleteRow(button) {
+    const row = button.closest('tr');
+    row.remove();
+}
+    // Event listener for when true_quantity is changed
+document.getElementById('product_table_body').addEventListener('input', function(event) {
+    if (event.target.name === 'true_quantity[]') {
+        const row = event.target.closest('tr');
+        updateDifference(row);
+    }
+});
+
+// Event listener for when ideal_quantity (plan quantity) is changed
+document.getElementById('product_table_body').addEventListener('input', function(event) {
+    if (event.target.name === 'ideal_quantity[]') {
+        const row = event.target.closest('tr');
+        updateDifference(row);
+    }
+});
+
+// Trigger the updateDifference function on true quantity or ideal quantity change
+document.getElementById('product_table_body').addEventListener('input', function(event) {
+    if (event.target.name === 'true_quantity[]' || event.target.name === 'ideal_quantity[]') {
+        const row = event.target.closest('tr');
+        updateDifference(row);
+    }
+});
+
+    // Generate inventory_in_id and source_ids on date change
+    document.getElementById('date').addEventListener('change', function () {
+        const selectedDate = new Date(this.value);
+        if (isNaN(selectedDate)) return;
+
+        const year = selectedDate.getFullYear();
+        const month = String(selectedDate.getMonth() + 1).padStart(2, '0');
+        const day = String(selectedDate.getUTCDate()).padStart(2, '0');
+
+        fetch(`/generate_inventory_in_id/${year}/${month}/${day}`)
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('inventory_in_id').value = data.inventory_in_id;
+                const batchNumber = data.inventory_in_id.slice(-3);
+
+                const rows = document.querySelectorAll('#product_table_body tr');
+                rows.forEach(row => {
+                    const sku = row.querySelector('select[name="product_sku[]"]').value;
+                    const sourceIdField = row.querySelector('input[name="source_id[]"]');
+                    const qrcodeImg = row.querySelector('.qrcode');
+
+                    if (sku) {
+                        const sourceId = `${sku}${year}${month}${day}${batchNumber}`;
+                        sourceIdField.value = sourceId;
+
+                        if (qrcodeImg) {
+                            qrcodeImg.src = `/generate_qrcode/${encodeURIComponent(sourceId)}`;
+                            qrcodeImg.style.display = 'block';
+                        }
+                    }
+                });
+            })
+            .catch(error => console.error('Error generating inventory_in_id:', error));
+    });
+
+    // Update source_id when SKU changes
+    document.getElementById('product_table_body').addEventListener('change', function (event) {
+        if (event.target.name === 'product_sku[]') {
+            const row = event.target.closest('tr');
+            const sku = event.target.value;
+            const inventoryInId = document.getElementById('inventory_in_id').value;
+            const sourceIdField = row.querySelector('input[name="source_id[]"]');
+            const qrcodeImg = row.querySelector('.qrcode');
+
+            if (inventoryInId && sku) {
+                const selectedDate = new Date(document.getElementById('date').value);
+                const year = selectedDate.getFullYear();
+                const month = String(selectedDate.getMonth() + 1).padStart(2, '0');
+                const day = String(selectedDate.getUTCDate()).padStart(2, '0');
+                const batchNumber = inventoryInId.slice(-3);
+
+                const sourceId = `${sku}${year}${month}${day}${batchNumber}`;
+                sourceIdField.value = sourceId;
+
+                if (qrcodeImg) {
+                    qrcodeImg.src = `/generate_qrcode/${encodeURIComponent(sourceId)}`;
+                    qrcodeImg.style.display = 'block';
+                }
+            }
+        }
+    });
+    
+</script>
+{% endblock %}

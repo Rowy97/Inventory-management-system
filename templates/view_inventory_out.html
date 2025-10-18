@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+
+{% block title %}查看出库记录{% endblock %}
+
+{% block content %}
+    <h2 class="my-4">出库记录</h2>
+    
+    <form method="GET" action="{{ url_for('download_inventory_out') }}" class="form-inline">
+        <label for="start_date">开始日期:</label>
+        <input type="date" name="start_date" id="start_date" class="form-control mx-2" required>
+      
+        <label for="end_date">结束日期:</label>
+        <input type="date" name="end_date" id="end_date" class="form-control mx-2" required>
+      
+        <button type="submit" class="btn btn-secondary ml-2">导出出库单</button>
+    </form>
+    <table class="table table-bordered">
+        <thead>
+            <tr>
+                <th>出库单号</th>
+                <th>出库日期</th>
+                <th>客户名</th>
+                <th>配送方式</th>
+                <th>操作员</th>
+                <th>操作</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in inventory_out_list %}
+            <tr>
+                <td>{{ item.inventory_out_id }}</td> <!-- 出库单号 -->
+                <td>{{ item.date }}</td>              <!-- 出库日期 -->
+                <td>{{ item.client }}</td>            <!-- 客户名 -->
+                <td>{{ item.delivery_way }}</td>      <!-- 配送方式 -->
+                <td>{{ item.user_name }}</td>         <!-- 操作员 -->
+                <td>
+                    <a href="{{ url_for('view_inventory_out_order', inventory_out_id=item.inventory_out_id) }}" class="btn btn-primary">查看</a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+{% endblock %}
+
+

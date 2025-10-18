@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+
+{% block title %}库存查询{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <h1 class="mt-4">库存</h1>
+    <table class="table table-bordered">
+        <thead>
+            <tr>
+                <th>产品SKU</th>
+                <th>产品名称</th>
+                <th>库存数量</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in inventory %}
+            <tr>
+                <td>{{ item[0] }}</td>  <!-- SKU -->
+                <td>{{ item[1] }}</td>  <!-- Product Name -->
+                <td>{{ item[2] }}</td>  <!-- Quantity -->
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    
+</div>
+
+<!-- Button to download inventory as Excel -->
+<a href="{{ url_for('download_inventory') }}" class="btn btn-success">导出库存</a>
+{% endblock %}
+
+
+

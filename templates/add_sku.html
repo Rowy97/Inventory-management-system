@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+
+{% block title %}添加新产品{% endblock %}
+
+{% block content %}
+    <div class="container">
+        <h1>添加新产品/SKU</h1>
+        <a href="{{ url_for('download_product') }}" class="btn btn-secondary ml-2">导出产品数据</a>
+        <form action="{{ url_for('add_sku') }}" method="POST">
+            <input type="text" name="sku" placeholder="SKU" required>
+            <input type="text" name="item" placeholder="Item Name" required>
+            <button type="submit" class="btn btn-primary">添加</button>
+        </form>
+
+        <h2>现有产品:</h2>
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>SKU</th>
+                    <th>Item</th>
+                    <th>操作</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for product in products %}
+                    <tr>
+                        <td>{{ product[0] }}</td> <!-- SKU -->
+                        <td>{{ product[1] }}</td> <!-- Item Name -->
+                        <td>
+                            <form action="{{ url_for('delete_sku', sku=product[0]) }}" method="POST">
+                                <button type="submit" class="btn btn-danger" onclick="return confirm('确定要删除这个产品吗?')">删除</button>
+                            </form>
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <!-- Pagination Controls -->
+        <div>
+            <span>第 {{ page }} 页，共 {{ total_pages }} 页</span>
+            <div>
+                {% if page > 1 %}
+                    <a href="{{ url_for('add_sku', page=page-1, sort_by=sort_by) }}">上一页</a>
+                {% endif %}
+                {% if page < total_pages %}
+                    <a href="{{ url_for('add_sku', page=page+1, sort_by=sort_by) }}">下一页</a>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- File Upload Form -->
+        <h3>上传产品数据</h3>
+        <form action="/upload_excel" method="POST" enctype="multipart/form-data">
+            <input type="file" name="file" accept=".xlsx, .xls" required>
+            <button type="submit" class="btn btn-primary">上传 Excel 文件</button>
+        </form>
+    </div>
+{% endblock %}

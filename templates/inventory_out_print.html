@@ -1,0 +1,106 @@
+{% extends "base.html" %}
+
+{% block title %}出库单 - {{ inventory_out.inventory_out_id }}{% endblock %}
+
+{% block head %}
+<style>
+    .print-container {
+        padding: 40px;
+    }
+    .print-container h2 {
+        text-align: center;
+        margin-bottom: 20px;
+    }
+    .summary {
+        margin-bottom: 30px;
+    }
+    .summary p {
+        margin: 4px 0;
+    }
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 10px;
+    }
+    th, td {
+        padding: 8px 12px;
+        border: 1px solid #ccc;
+        text-align: left;
+    }
+    .print-button {
+        margin-top: 30px;
+        text-align: center;
+    }
+    @media print {
+        .print-button {
+            display: none;
+        }
+    }
+</style>
+
+{% endblock %}
+
+{% block content %}
+<style>
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 10px;
+        border: 2px solid #333; /* Add a visible frame */
+    }
+
+    th, td {
+        padding: 8px 12px;
+        border: 1px solid #666; /* Border for each cell */
+        text-align: left;
+    }
+
+    th {
+        background-color: #f2f2f2; /* Optional: Light background for headers */
+    }
+</style>
+<div class="print-container">
+    <h2>出库记录 - {{ inventory_out.inventory_out_id }}</h2>
+
+    <div class="summary">
+        <p><strong>出库单号:</strong> {{ inventory_out.inventory_out_id }}</p>
+        <p><strong>出库日期:</strong> {{ inventory_out.date }}</p>
+        <p><strong>对应单号:</strong> {{ inventory_out.corresponding_order }}</p>
+        <p><strong>invoice单号:</strong> {{ inventory_out.invoice }}</p>
+        <p><strong>操作人:</strong> {{ inventory_out.user_name }}</p>
+    </div>
+
+    <table>
+        <thead>
+            <tr>
+                <th>index</th>
+                <th>产品名称</th>
+                <th>SKU</th>
+                <th>实出数量</th>
+                <th>溯源码</th>
+                <th>二维码</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in items %}
+            <tr>
+                <td>{{ loop.index }}</td>
+                <td>{{ products[item.product_sku] }}</td>
+                <td>{{ item.product_sku }}</td>
+                
+                <td>{{ item.true_quantity }}</td>
+                <td>{{ item.source_id }}</td>
+                <td>
+                    <img src="{{ item.qr_code }}" alt="QR Code" width="80" height="80">
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    
+
+    <div class="print-button">
+        <button class="btn btn-primary" onclick="window.print()">打印</button>
+    </div>
+</div>
+{% endblock %}

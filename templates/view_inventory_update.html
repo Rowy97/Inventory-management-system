@@ -1,0 +1,41 @@
+{% extends 'base.html' %}
+
+{% block title %}查看盘点记录{% endblock %}
+
+{% block content %}
+<a href="{{ url_for('inventory_order') }}" class="btn btn-secondary mt-3 ml-2">返回</a>
+    <h2 class="my-4">历史盘点记录</h2>
+    <table class="table table-bordered">
+        <thead>
+            <tr>
+                <th>盘点ID</th>
+                <th>日期</th>
+                <th>溯源码</th>
+                <th>产品SKU</th>
+                <th>产品名称</th>
+                <th>原库存数量</th>
+                <th>盘点数量</th>
+                <th>差额</th>
+                <th>备注</th>
+                <th>操作员</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for row in inventory %}
+            <tr>
+                <td>{{ row[0] }}</td>  <!-- update_id -->
+                <td>{{ row[1] }}</td>  <!-- source_id -->
+                <td>{{ row[2] }}</td>  <!-- product_sku -->
+                <td>{{ row[3] }}</td>  <!-- product_name -->
+                <td>{{ row[4] }}</td>  <!-- inventory_quantity -->
+                <td>{{ row[5] }}</td>  <!-- true_quantity -->
+                <td>{{ row[6] }}</td>  <!-- diff -->
+                <td>{{ row[7] }}</td>  <!-- note -->
+                <td>{{ row[8] }}</td>  <!-- date -->
+                <td>{{ row[9] }}</td>  <!-- user_name -->
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    <a href="{{ url_for('inventory_order') }}" class="btn btn-secondary mt-3 ml-2">返回</a>
+{% endblock %}

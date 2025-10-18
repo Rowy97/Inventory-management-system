@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+
+{% block title %}查看出库单内容{% endblock %}
+
+{% block content %}
+    <h2 class="my-4">出库单内容 - {{ inventory_out_id }}</h2>
+    <a href="{{ url_for('view_inventory_out') }}" class="btn btn-secondary mb-3">← 返回查看出库记录</a>
+
+    <table class="table table-bordered">
+        <thead>
+            <tr>
+                <th>产品SKU</th>
+                <th>产品名称</th>
+                <th>应出数量</th>
+                <th>实出数量</th>
+                <th>溯源码</th>
+                <th>备注</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in order_items %}
+            <tr>
+                <td>{{ item.product_sku }}</td>        <!-- 产品SKU -->
+                <td>{{ item.product_name }}</td>      <!-- 产品名称 -->
+                <td>{{ item.ideal_total_quantity }}</td> <!-- 应出数量 -->
+                <td>{{ item.true_quantity }}</td>     <!-- 实出数量 -->
+                <td>{{ item.source_id }}</td>         <!-- 溯源码 -->
+                <td>{{ item.note or '' }}</td>        <!-- 备注 -->
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+{% endblock %}
+
+

@@ -1,0 +1,31 @@
+{% extends 'base.html' %}
+
+{% block title %}查看采购表{% endblock %}
+
+{% block content %}
+    <h2 class="my-4">历史采购表</h2>
+    <table class="table table-bordered">
+        <thead>
+            <tr>
+                <th>产品名称</th>
+                <th>产品SKU</th>
+                <th>单价</th>
+                <th>数量</th>
+                <th>总价</th>
+                <th>运费</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for row in purchase %}
+            <tr>
+                <td>{{ row[0] }}</td>  <!-- produce_source -->
+                <td>{{ row[1] }}</td>  <!-- date -->
+                <td>{{ row[2] }}</td>  <!-- product_sku -->
+                <td>{{ row[3] }}</td>  <!-- product_name -->
+                <td>{{ row[4] }}</td>  <!-- sale order id -->
+                <td>{{ row[5] }}</td>  <!-- plan_quantity -->
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+{% endblock %}

@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+
+{% block title %}查看入库记录{% endblock %}
+
+{% block content %}
+    <h2 class="my-4">入库记录</h2>
+    <form method="GET" action="{{ url_for('download_inventory_in') }}" class="form-inline">
+        <label for="start_date">开始日期:</label>
+        <input type="date" name="start_date" id="start_date" class="form-control mx-2" required>
+      
+        <label for="end_date">结束日期:</label>
+        <input type="date" name="end_date" id="end_date" class="form-control mx-2" required>
+      
+        <button type="submit" class="btn btn-secondary ml-2">导出入库单</button>
+    </form>   
+    <table class="table table-bordered">
+        <thead>
+            <tr>
+                <th>入库单号</th>
+                <th>入库类型</th>
+                <th>入库日期</th>
+                <th>对应订单号/发票号</th>
+                <th>操作人</th>
+                <th>操作</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in inventory_in_list %}
+            <tr>
+                <td>{{ item.inventory_in_id }}</td>  <!-- 入库单号 -->
+                <td>{{ item.in_type }}</td>          <!-- 入库类型 -->
+                <td>{{ item.date }}</td>             <!-- 入库日期 -->
+                <td>{{ item.corresponding_order }}</td> <!-- 对应订单号/发票号 -->
+                <td>{{ item.user_name }}</td>        <!-- 操作人 -->
+                <td>
+                    <a href="{{ url_for('view_inventory_in_order', inventory_in_id=item.inventory_in_id) }}" class="btn btn-primary">查看</a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+{% endblock %}
+
+

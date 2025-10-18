@@ -1,0 +1,336 @@
+{% extends "base.html" %}
+
+{% block title %}销售单{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <h1 class="mt-4">销售单</h1>
+
+    <form action="{{ url_for('sale_order') }}" method="POST">
+        <!-- Sale Information -->
+        <h3>销售单信息</h3>
+        <div class="row">
+            <div class="col-md-3">
+                <div class="form-group">
+                    <label for="sale_date">销售日期</label>
+                    <input type="date" class="form-control" id="sale_date" name="sale_date" required onchange="generateSaleId()">
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="form-group">
+                    <label for="sale_id">销售单号</label>
+                    <input type="text" class="form-control" id="sale_id" name="sale_id" readonly>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="form-group">
+                    <label for="rep">销售代表</label>
+                    <select class="form-control" id="rep" name="rep" required>
+                        <option value="not specified">请选择销售代表</option>
+                        {% for sales_rep in sales_reps %}
+                            <option value="{{ sales_rep }}">{{ sales_rep }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="form-group">
+                    <label for="user_name">操作员</label>
+                    <input type="text" class="form-control" id="user_name" name="user_name" value="{{ current_user.username }}" readonly>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-4">
+                <div class="form-group">
+                    <label for="client">客户名称</label>
+                    <input type="text" class="form-control" id="client" name="client" required>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="form-group">
+                    <label for="delivery_way">配送方式</label>
+                    <input type="text" class="form-control" id="delivery_way" name="delivery_way" required>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="form-group">
+                    <label for="invoice">支付单号</label>
+                    <input type="text" class="form-control" id="invoice" name="invoice" 
+                           pattern="[A-Z]{1}[0-9]{6}" 
+                           placeholder="例如：A123456" 
+                           title="格式应为一个大写字母加六位数字，如 A123456">
+                </div>
+            </div>
+        </div>
+
+        <hr>
+
+        <!-- Sale Order Information -->
+        <h3>销售单内容</h3>
+        <button type="button" id="add_product" class="btn btn-info mb-3">添加更多产品</button>
+        <div id="sale_order_items">
+            <div class="product-block original-product-block">
+                <!-- Header -->
+                <div class="row font-weight-bold">
+                    <div class="col-md-4">产品名称</div>
+                    <div class="col-md-3">产品SKU</div>
+                    <div class="col-md-3">备注</div>
+                </div>
+                <!-- Product Info -->
+                <div class="sale_order_item row">
+                    <div class="col-md-4">
+                        
+                        <!-- Visible input field with datalist -->
+                        <input type="text" id="product_filter" class="form-control product-name-input" list="product_list" name="product_name[]" placeholder="输入产品名称" required>
+        
+                        <!-- List of products as the datalist for filtering -->
+                        <datalist id="product_list">
+                        {% for product in products %}
+                            <option value="{{ product['item'] }}" data-sku="{{ product['sku'] }}"></option>
+                        {% endfor %}
+                        </datalist>
+                    </div>
+                    <div class="col-md-3">
+                        <input type="text" class="form-control product-sku" name="product_sku[]" readonly required>
+                    </div>
+                    <div class="col-md-3">
+                        <input type="text" class="form-control note" name="note[]">
+                    </div>
+                </div>
+                <!-- Price Info -->
+                <div class="row font-weight-bold">
+                    <div class="col-md-3">单价</div>
+                    <div class="col-md-3">数量</div>
+                    <div class="col-md-3">总价格</div>
+                    <div class="col-md-3"></div>
+                </div>
+                <div class="sale_order_item row">
+                    <div class="col-md-3"><input type="number" step="0.01" class="form-control unit-price" name="unit_price[]" required></div>
+                    <div class="col-md-3"><input type="number" class="form-control quantity" name="quantity[]" required></div>
+                    <div class="col-md-3"><input type="number" step="0.01" class="form-control total-price" name="price[]" required></div>
+                    <div class="col-md-3 text-right">
+                    <button type="button" class="btn btn-danger btn-sm delete-product mt-2">删除</button>
+                    </div>
+                </div>
+                <hr>
+            </div>
+        </div>
+
+        <hr>
+
+        <!-- Grand Total Price -->
+        <h3>总计</h3>
+        <div class="row">
+            <div class="col-md-6">
+                <div class="form-group">
+                    <label for="grand_total">商品总价</label>
+                    <input type="number" step="0.01" class="form-control" id="grand_total" name="grand_total" readonly>
+                    <label for="client">运费</label>
+                    <input type="number" class="form-control" id="delivery_fee" name="delivery_fee" value="0" min="0" required step=1>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <label for="tax">税</label>
+                            <input type="number" step="0.01" class="form-control" id="tax" name="tax" readonly>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="tax_rate">税率（单位%）</label>
+                            <input type="number" class="form-control" id="tax_rate" step="0.1" name="tax_rate" value="0" min="0" required placeholder="例：输入7则税率为7%">
+                        </div>
+                        
+                    </div>   
+                     <hr>
+                    <label for="grand_total_tax"><strong>订单总价</strong></label>
+                    <input type="number" step="0.01" class="form-control" id="grand_total_tax" name="grand_total_tax" readonly>
+                </div>
+            </div>
+        </div>
+
+        <!-- Submit Button -->
+        <button type="submit" class="btn btn-primary mt-3">提交销售单</button>
+    </form>
+</div>
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        // Attach input event listener to all current and future product-name-input fields
+        document.getElementById("sale_order_items").addEventListener("input", function (event) {
+            if (event.target.classList.contains("product-name-input")) {
+                const input = event.target;
+                const value = input.value;
+                const options = document.querySelectorAll("#product_list option");
+                let sku = "";
+    
+                for (let i = 0; i < options.length; i++) {
+                    if (options[i].value === value) {
+                        sku = options[i].getAttribute("data-sku");
+                        break;
+                    }
+                }
+    
+                // Find the closest SKU input within the same product block
+                const container = input.closest(".sale_order_item");
+                const skuInput = container.querySelector("input[name='product_sku[]']");
+                if (skuInput) {
+                    skuInput.value = sku;
+                }
+            }
+        });
+    });
+    </script>
+<script>
+      document.querySelectorAll('.unit-price').forEach(function(input) {
+    input.addEventListener('blur', function() {
+      if (this.value !== "") {
+        this.value = parseFloat(this.value).toFixed(2);
+      }
+    });
+  });
+    document.getElementById("tax_rate").addEventListener("input", updateFinalTotal);
+document.getElementById("delivery_fee").addEventListener("input", updateFinalTotal);
+document.getElementById('delivery_fee').addEventListener('blur', function() {
+    this.value = parseFloat(this.value || 0).toFixed(2);
+});
+function updateFinalTotal() {
+    let grandTotal = parseFloat(document.getElementById("grand_total").value) || 0;
+    let deliveryFee = parseFloat(document.getElementById("delivery_fee").value) || 0;
+    let taxRate = parseFloat(document.getElementById("tax_rate").value) || 0;
+
+    // Compute total before tax
+    let subTotal = grandTotal + deliveryFee;
+
+    // Calculate tax
+    let taxAmount = grandTotal * (taxRate / 100);
+    document.getElementById("tax").value = taxAmount.toFixed(2);
+
+    // Final total including tax
+    let totalWithTax = subTotal + taxAmount;
+    document.getElementById("grand_total_tax").value = totalWithTax.toFixed(2);
+}
+function updateGrandTotal() {
+    let grandTotal = 0;
+    document.querySelectorAll(".total-price").forEach(input => {
+        grandTotal += parseFloat(input.value) || 0;
+    });
+    document.getElementById("grand_total").value = grandTotal.toFixed(2);
+
+    // Refresh tax and grand_total_tax
+    updateFinalTotal();
+}
+document.addEventListener("DOMContentLoaded", function() {
+    let today = new Date().toISOString().split('T')[0];
+    let saleDateInput = document.getElementById("sale_date");
+    saleDateInput.value = today;
+    generateSaleId(today);
+    
+    saleDateInput.addEventListener("change", function() {
+        generateSaleId(this.value);
+    });
+
+    function generateSaleId(selectedDate) {
+        if (selectedDate) {
+            const [year, month, day] = selectedDate.split('-');
+            fetch(`/generate_sale_id/${year}/${month}/${day}`)
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById("sale_id").value = data.sale_id;
+                })
+                .catch(error => console.error("Error fetching PO:", error));
+        }
+    }
+
+    let productCount = 2;
+
+    function updateSKU(selectElement) {
+        let selectedOption = selectElement.options[selectElement.selectedIndex];
+        //let skuInput = selectElement.closest(".sale_order_item").querySelector(".product-sku");
+        let skuInput = document.querySelector("input[name='product_sku[]']");
+        let options = document.querySelectorAll("#product_list option");
+        let sku = "";
+         // Find the matching option in the datalist
+        for (let i = 0; i < options.length; i++) {
+            if (options[i].value === value) {
+                sku = options[i].getAttribute("data-sku");
+                break;
+            }
+        }
+        skuInput.value = sku;
+        //skuInput.value = selectedOption.getAttribute("data-sku");
+    }
+
+    function calculateTotalPrice(row) {
+        let quantity = parseFloat(row.querySelector(".quantity").value) || 0;
+        let unitPrice = parseFloat(row.querySelector(".unit-price").value) || 0;
+        //let deliveryFee = parseFloat(row.querySelector(".delivery-fee").value) || 0;
+        let totalPrice = quantity * unitPrice;
+        row.querySelector(".total-price").value = totalPrice.toFixed(2);
+        updateGrandTotal();
+    }
+
+    function updateGrandTotal() {
+        let grandTotal = 0;
+        document.querySelectorAll(".total-price").forEach(input => {
+            grandTotal += parseFloat(input.value) || 0;
+        });
+        document.getElementById("grand_total").value = grandTotal.toFixed(2);
+    }
+
+
+    document.getElementById('sale_order_items').addEventListener('input', function(event) {
+        let target = event.target;
+        if (target.classList.contains("product-name-input")) {
+            updateSKU(event.target);
+        }
+        if (target.classList.contains("quantity") || target.classList.contains("unit-price") || target.classList.contains("delivery-fee")) {
+            calculateTotalPrice(target.closest(".sale_order_item"));
+            updateFinalTotal();
+        }
+    });
+
+    document.getElementById("add_product").addEventListener("click", function () {
+        let container = document.getElementById("sale_order_items");
+        let original = document.querySelector(".original-product-block");
+        let clone = original.cloneNode(true);
+        clone.classList.remove("original-product-block");
+        clone.querySelectorAll("input, select").forEach(el => {
+            if (el.tagName === "SELECT") {
+                el.selectedIndex = 0;
+            } else {
+                el.value = "";
+            }
+        });
+        container.appendChild(clone);
+        productCount++;
+
+// Reattach event listeners for the new elements (important after cloning)          
+        let newProductInput = clone.querySelector(".product-name-input");
+        newProductInput.addEventListener("input", function() {
+            updateSKU(this);
+        });
+
+
+
+    });
+
+    document.getElementById("sale_order_items").addEventListener("click", function (e) {
+        if (e.target.classList.contains("delete-product")) {
+            const block = e.target.closest(".product-block");
+            if (block.classList.contains("original-product-block")) {
+                block.querySelectorAll("input, select").forEach(el => {
+                    if (el.tagName === "SELECT") {
+                        el.selectedIndex = 0;
+                    } else {
+                        el.value = "";
+                    }
+                });
+            } else {
+                block.remove();
+            }
+            updateGrandTotal();
+            updateFinalTotal();
+        }
+    });
+    updateGrandTotal();
+});
+</script>
+{% endblock %}

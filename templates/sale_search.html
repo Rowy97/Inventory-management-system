@@ -1,0 +1,212 @@
+{% extends "base.html" %}
+
+{% block title %}销售单查询{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <h1 class="mt-4">销售单查询</h1>
+    <form method="GET" action="{{ url_for('download_sale_orders') }}" class="form-inline">
+        <label for="start_date">开始日期:</label>
+        <input type="date" name="start_date" id="start_date" class="form-control mx-2" required>
+      
+        <label for="end_date">结束日期:</label>
+        <input type="date" name="end_date" id="end_date" class="form-control mx-2" required>
+      
+        <button type="submit" class="btn btn-secondary ml-2">导出销售订单</button>
+      </form>
+    <h3 class="mt-4">未付款</h3>
+    {% if sales0 %}
+        <!-- Displaying Sales Data in a Table -->
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>销售单号</th>
+                    <th>销售日期</th>
+                    <th>客户名</th>
+                    <th>销售代表</th>
+                    <th>配送方式</th>
+                    <th>收款单号</th>
+                    <th>订单金额</th>
+                    <th>实际收款</th>
+                    <th>操作员</th>
+                    <th>Actions</th> <!-- You can add any actions here, such as View, Edit, etc. -->
+                </tr>
+            </thead>
+            <tbody>
+                {% for sale in sales0 %}
+                    <tr>
+                        <td>{{ sale.sale_id }}</td>
+                        <td>{{ sale.sale_date }}</td>
+                        <td>{{ sale.client }}</td>
+                        <td>{{ sale.rep }}</td>
+                        <td>{{ sale.delivery_way }}</td>
+                        <td>{{ sale.invoice if sale.invoice else '未填写' }}</td>
+                        <td>{{ sale.grand_total }}</td>
+                        <td>{{ sale.amount_received }}</td>
+                        <td>{{ sale.user_name }}</td>
+                        <td>
+                            <!-- Add Action buttons here (e.g., View, Edit) -->
+                            <!-- If user is admin or purchase, show Edit button -->
+                            {% if current_user.role in ['admin', 'purchase'] %}
+                            <a href="{{ url_for('edit_sale', sale_id=sale.sale_id) }}" class="btn btn-warning">编辑</a>
+                            {% endif %}
+                            <a href="{{ url_for('view_sale', sale_id=sale.sale_id) }}" class="btn btn-primary">查看</a>
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <!-- Show message if no sales data -->
+        <div class="alert alert-warning" role="alert">
+            No sales data available.
+        </div>
+    {% endif %}
+    <hr>
+    <h3 class="mt-4">已付款未出库</h3>
+    {% if sales1 %}
+        <!-- Displaying Sales Data in a Table -->
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>销售单号</th>
+                    <th>销售日期</th>
+                    <th>客户名</th>
+                    <th>销售代表</th>
+                    <th>配送方式</th>
+                    <th>收款单号</th>
+                    <th>订单金额</th>
+                    <th>实际收款</th>
+                    <th>操作员</th>
+                    <th>Actions</th> <!-- You can add any actions here, such as View, Edit, etc. -->
+                </tr>
+            </thead>
+            <tbody>
+                {% for sale in sales1 %}
+                    <tr>
+                        <td>{{ sale.sale_id }}</td>
+                        <td>{{ sale.sale_date }}</td>
+                        <td>{{ sale.client }}</td>
+                        <td>{{ sale.rep }}</td>
+                        <td>{{ sale.delivery_way }}</td>
+                        <td>{{ sale.invoice if sale.invoice else '未填写' }}</td>
+                        <td>{{ sale.grand_total }}</td>
+                        <td>{{ sale.amount_received }}</td>
+                        <td>{{ sale.user_name }}</td>
+                        <td>
+                            <!-- Add Action buttons here (e.g., View, Edit) -->
+                            <!-- If user is admin or purchase, show Edit button -->
+                            {% if current_user.role in ['admin', 'purchase'] %}
+                            <a href="{{ url_for('edit_sale', sale_id=sale.sale_id) }}" class="btn btn-warning">编辑</a>
+                            {% endif %}
+                            <a href="{{ url_for('view_sale', sale_id=sale.sale_id) }}" class="btn btn-primary">查看</a>
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <!-- Show message if no sales data -->
+        <div class="alert alert-warning" role="alert">
+            No sales data available.
+        </div>
+    {% endif %}
+
+    <hr> <h3 class="mt-4">已出库</h3>
+    {% if sales2 %}
+        <!-- Displaying Sales Data in a Table -->
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>销售单号</th>
+                    <th>销售日期</th>
+                    <th>客户名</th>
+                    <th>销售代表</th>
+                    <th>配送方式</th>
+                    <th>收款单号</th>
+                    <th>订单金额</th>
+                    <th>实际收款</th>
+                    <th>操作员</th>
+                    <th>Actions</th> <!-- You can add any actions here, such as View, Edit, etc. -->
+                </tr>
+            </thead>
+            <tbody>
+                {% for sale in sales2 %}
+                    <tr>
+                        <td>{{ sale.sale_id }}</td>
+                        <td>{{ sale.sale_date }}</td>
+                        <td>{{ sale.client }}</td>
+                        <td>{{ sale.rep }}</td>
+                        <td>{{ sale.delivery_way }}</td>
+                        <td>{{ sale.invoice if sale.invoice else '未填写' }}</td>
+                        <td>{{ sale.grand_total }}</td>
+                        <td>{{ sale.amount_received }}</td>
+                        <td>{{ sale.user_name }}</td>
+                        <td>
+                            <!-- Add Action buttons here (e.g., View, Edit) -->
+                            <a href="{{ url_for('view_sale', sale_id=sale.sale_id) }}" class="btn btn-primary">查看</a>
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+            <!-- Show message if no sales data -->
+            <div class="alert alert-warning" role="alert">
+                No sales data available.
+            </div>
+    {% endif %}
+
+    <hr> <h3 class="mt-4">作废订单</h3>
+    {% if sales3 %}
+        <!-- Displaying Sales Data in a Table -->
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>销售单号</th>
+                    <th>销售日期</th>
+                    <th>客户名</th>
+                    <th>销售代表</th>
+                    <th>配送方式</th>
+                    <th>收款单号</th>
+                    <th>订单金额</th>
+                    <th>实际收款</th>
+                    <th>操作员</th>
+                    <th>Actions</th> <!-- You can add any actions here, such as View, Edit, etc. -->
+                </tr>
+            </thead>
+            <tbody>
+                {% for sale in sales3 %}
+                    <tr>
+                        <td>{{ sale.sale_id }}</td>
+                        <td>{{ sale.sale_date }}</td>
+                        <td>{{ sale.client }}</td>
+                        <td>{{ sale.rep }}</td>
+                        <td>{{ sale.delivery_way }}</td>
+                        <td>{{ sale.invoice if sale.invoice else '未填写' }}</td>
+                        <td>{{ sale.grand_total }}</td>
+                        <td>{{ sale.amount_received }}</td>
+                        <td>{{ sale.user_name }}</td>
+                        <td>
+                            <!-- Add Action buttons here (e.g., View, Edit) -->
+                            <!-- If user is admin or purchase, show Edit button -->
+                            {% if current_user.role in ['admin', 'purchase'] %}
+                            <form action="{{ url_for('restore_sale', sale_id=sale.sale_id) }}" method="POST" style="display:inline;" onsubmit="return confirm('确定恢复此销售单吗？恢复后订单将为未付款未出库状态。');">
+                                <button type="submit" class="btn btn-info ml-2">恢复</button>
+                            </form>
+                            {% endif %}
+                            
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <!-- Show message if no sales data -->
+        <div class="alert alert-warning" role="alert">
+            No sales data available.
+        </div>
+    {% endif %}
+
+</div>
+{% endblock %}

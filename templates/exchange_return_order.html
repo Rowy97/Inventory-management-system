@@ -1,0 +1,293 @@
+{% extends "base.html" %}
+
+{% block title %}退换货审批单{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <h1 class="mt-4">退换货审批单</h1>
+    
+    <form method="GET" action="{{ url_for('download_exchange_return') }}" class="form-inline">
+        <label for="start_date">开始日期:</label>
+        <input type="date" name="start_date" id="start_date" class="form-control mx-2" required>
+      
+        <label for="end_date">结束日期:</label>
+        <input type="date" name="end_date" id="end_date" class="form-control mx-2" required>
+      
+        <button type="submit" class="btn btn-secondary ml-2">导出退换货审批单</button>
+    </form>
+    
+    <form method="POST">
+        <!-- Basic Information Section -->
+        <div class="row">
+            <div class="col-md-6">
+                <div class="form-group">
+                    <label for="date">日期</label>
+                    <input type="date" class="form-control" id="date" name="date" required>
+                </div>
+            </div>
+
+            <div class="col-md-6">
+                <div class="form-group">
+                    <label for="client">客户名</label>
+                    <input type="text" class="form-control" id="client" name="client" required>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-6">
+                <div class="form-group">
+                    <label for="rep">销售代表</label>
+                    <select class="form-control" id="rep" name="rep" required>
+                        <option value="not specified">请选择销售代表</option>
+                        {% for sales_rep in sales_reps %}
+                            <option value="{{ sales_rep[0] }}">{{ sales_rep[0] }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+
+            <div class="col-md-6">
+                <div class="form-group">
+                    <label for="user_name">操作人</label>
+                    <input type="text" class="form-control" id="user_name" name="user_name" value="{{ current_user.username }}" readonly>
+                </div>
+            </div>
+        </div>
+
+        <input type="hidden" name="produce_source" value="{{ produce_source }}">
+
+        <!-- Product Selection Section -->
+        <h3>产品信息</h3>
+        <button type="button" class="btn btn-info mb-3" id="add_product_row">添加产品信息</button>
+        <div id="product_rows">
+            <div class="product_row" id="product_row">
+                <h4>产品信息1
+                    <button type="button" class="btn btn-danger btn-sm float-right delete-product">删除</button>
+                </h4>
+                <div class="row">
+                    <div class="col-md-4">
+                        <div class="form-group">
+                            <label for="product_filter">产品名称（双击鼠标看目录）</label>
+                            <input type="text"
+                                   class="form-control product-name-input"
+                                   placeholder="输入产品名称"
+                                   list="product_list"
+                                   name="product_name[]"
+                                   oninput="updateSkuFromName(this)"
+                                   required>
+                        </div>
+                    </div>
+                    
+                    <!-- Product SKU Output (readonly) -->
+                    <div class="col-md-4">
+                        <div class="form-group">
+                            <label for="product_sku">产品SKU</label>
+                            <input type="text" class="form-control product-sku" name="product_sku[]" readonly required>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="form-group">
+                            <label for="unit_price">单价</label>
+                            <input type="number" class="form-control unit-price" name="unit_price[]" required step=0.01 inputmode="decimal">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-4">
+                        <div class="form-group">
+                            <label for="quantity">数量</label>
+                            <input type="number" class="form-control quantity" name="quantity[]" required>
+                        </div>
+                    </div>
+
+                    <div class="col-md-4">
+                        <div class="form-group">
+                            <label for="price">总价</label>
+                            <input type="number" class="form-control price" name="price[]" readonly required>
+                        </div>
+                    </div>
+
+                    <div class="col-md-4">
+                        <div class="form-group">
+                            <label for="original_date">原始发货日期</label>
+                            <input type="date" class="form-control" name="original_date[]" required>
+                        </div>
+                    </div>
+                </div>
+                <hr>
+            </div>
+        </div>
+
+        <!-- Approval Section -->
+        <div class="row">
+            <div class="col-md-4">
+                <div class="form-group">
+                    <label for="reviewer">审批人签字</label>
+                    <input type="text" class="form-control" name="reviewer" required>
+                </div>
+            </div>
+        </div>
+
+        <!-- Submit Button -->
+        <button type="submit" class="btn btn-primary" id="submit_button">提交</button>
+        <a href="{{ url_for('download_exchange_return') }}" class="btn btn-secondary ml-2">导出退换货审批单</a>
+        <datalist id="product_list">
+            {% for product in products %}
+                <option value="{{ product[0] }}" data-sku="{{ product[1] }}"></option>
+            {% endfor %}
+        </datalist>
+    </form>
+</div>
+
+<script>
+ function updateSkuFromName(input) {
+    const value = input.value;
+    const options = document.querySelectorAll('#product_list option');
+    let matchedSku = "";
+
+    options.forEach(option => {
+        if (option.value === value) {
+            matchedSku = option.getAttribute('data-sku');
+        }
+    });
+
+    // Find the .product_row container
+    const row = input.closest('.product_row');
+    if (row) {
+        const skuInput = row.querySelector('.product-sku');
+        if (skuInput) {
+            skuInput.value = matchedSku;
+        }
+    }
+}
+    
+</script>
+
+
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        let index = 2;
+        
+        // Add product row functionality
+        document.getElementById('add_product_row').addEventListener('click', function() {
+            const productList = document.getElementById('product_rows');
+            const newProductRow = document.createElement('div');
+            newProductRow.classList.add('product_row');  
+            newProductRow.innerHTML = `
+                <h4>产品信息 ${index} <button type="button" class="btn btn-danger btn-sm float-right delete-product">删除</button></h4>
+                    <div class="row">
+                       <div class="col-md-4">
+                        <div class="form-group">
+                            <label for="product_filter">产品名称（双击鼠标看目录）</label>
+                            <input type="text"
+                                   class="form-control product-name-input"
+                                   placeholder="输入产品名称"
+                                   list="product_list"
+                                   name="product_name[]"
+                                   oninput="updateSkuFromName(this)"
+                                   required>
+                        </div>
+                    </div>
+                
+                    <!-- Product SKU Output (readonly) -->
+                    <div class="col-md-4">
+                        <div class="form-group">
+                            <label for="product_sku">产品SKU</label>
+                            <input type="text" class="form-control product-sku" name="product_sku[]" readonly required>
+                        </div>
+                    </div>
+        
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                <label for="unit_price">单价</label>
+                                <input type="number" class="form-control unit-price" name="unit_price[]" required step=0.01 inputmode="decimal">
+                            </div>
+                        </div>
+                    </div>
+        
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                <label for="quantity">数量</label>
+                                <input type="number" class="form-control quantity" name="quantity[]" required>
+                            </div>
+                        </div>
+        
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                <label for="price">总价</label>
+                                <input type="number" class="form-control price" name="price[]" readonly required>
+                            </div>
+                        </div>
+        
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                <label for="original_date">原始发货日期</label>
+                                <input type="date" class="form-control" name="original_date[]" required>
+                            </div>
+                        </div>
+                    </div>
+            `;
+        
+            productList.appendChild(newProductRow);
+            index++;
+        
+            // Add the event listener for SKU autofill to the newly added product row
+           
+        
+            // Add price calculation for unit_price and quantity inputs in the new row
+            addPriceCalculation(newProductRow);
+        });
+        
+        // Delete product row
+        document.addEventListener("click", function(e) {
+            if (e.target.classList.contains("delete-product")) {
+                const row = e.target.closest('.product_row');
+                if (row) {
+                    row.remove();
+                }
+            }
+        });
+
+     
+        // Function to add price calculation for unit_price and quantity inputs
+        function addPriceCalculation(row) {
+            const unitPriceInput = row.querySelector('.unit-price');
+            const quantityInput = row.querySelector('.quantity');
+            const priceInput = row.querySelector('.price');
+
+            function updatePrice() {
+                const unitPrice = parseFloat(unitPriceInput.value) || 0;
+                const quantity = parseInt(quantityInput.value) || 0;
+                priceInput.value = (unitPrice * quantity).toFixed(2);  // Calculate and update the price
+            }
+        
+            // Add event listeners to unit price and quantity inputs to update the price
+            unitPriceInput.addEventListener('input', updatePrice);
+            quantityInput.addEventListener('input', updatePrice);
+        }
+        
+        // Use event delegation to attach event listeners for dynamically added rows
+        document.getElementById('product_rows').addEventListener('input', function(e) {
+            if (e.target.classList.contains('unit-price') || e.target.classList.contains('quantity')) {
+                const row = e.target.closest('.product_row');
+            }
+        });
+        
+        
+        // Attach price calculation for the initially rendered product rows
+        document.querySelectorAll('.product_row').forEach(function(row) {
+            addPriceCalculation(row);
+        });
+    });
+    
+    
+</script> 
+
+{% endblock %}
+
+
+
+

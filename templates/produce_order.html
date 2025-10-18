@@ -1,0 +1,253 @@
+{% extends "base.html" %}
+
+{% block title %}生产单{% endblock %}
+
+{% block content %}
+
+<div class="container-fluid d-flex flex-column">
+    <h1 class="mt-4">生产单</h1>
+
+    <form action="{{ url_for('produce_order') }}" method="POST" class="flex-grow-1">
+        <!-- Product Information -->
+        <div class="row">
+            <div class="col-md-6">
+                <div class="form-group">
+                    <label for="product_filter">产品名称（双击鼠标看目录）</label>
+                        <input type="text" id="product_filter" class="form-control" placeholder="输入产品名称" list="product_list" name="product_name" required>
+
+                        <!-- List of products as the datalist for filtering -->
+                        <datalist id="product_list">
+                            {% for product in products %}
+                                <option value="{{ product[0] }}" data-sku="{{ product[1] }}"></option>
+                            {% endfor %}
+                        </datalist>
+                </div>
+            </div>
+
+            <div class="col-md-6">
+                <div class="form-group">
+                    <label for="product_sku">产品SKU</label>
+                    <input type="text" class="form-control" id="product_sku" name="product_sku" readonly required>
+                </div>
+            </div>
+        </div>
+
+        <script>
+            document.addEventListener("DOMContentLoaded", function() {
+                let productSelect = document.getElementById("product_name");
+                let skuInput = document.getElementById("product_sku");
+
+                productSelect.addEventListener("change", function() {
+                    let selectedOption = productSelect.options[productSelect.selectedIndex];
+                    let sku = selectedOption.getAttribute("data-sku");
+                    skuInput.value = sku; // Auto-fill SKU based on selected product
+                });
+            });
+        </script>
+
+        <div class="row">
+            <div class="col-md-6">
+                <div class="form-group">
+                    <label for="produce_date">生产日期</label>
+                    <input type="date" class="form-control" id="produce_date" name="produce_date" required>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="form-group">
+                        <label for="produce_source">生产单号 (自动生成)</label>
+                        <input type="text" class="form-control" id="produce_source" name="produce_source" readonly>
+                </div>
+            </div>   
+        </div>
+
+        <!-- Produce Source Block -->
+        <div class="row">
+            <div class="col-md-6">
+                <div class="form-group">
+                    <label for="plan_quantity">计划生产数量</label>
+                    <input type="number" class="form-control" id="plan_quantity" name="plan_quantity" required>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="form-group">
+                    <label for="sale_id">关联销售单号 (选填)</label>
+                    <input type="text" class="form-control" id="sale_id" name="sale_id">
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-6">
+                <div class="form-group">
+                    <label for="user_name">操作员</label>
+                    <input type="text" class="form-control" id="user_name" name="user_name" value="{{ current_user.username }}" readonly>
+                </div>
+            </div>
+        </div>
+
+        <!-- Produce Order Information -->
+        <h3>生产单内容</h3>
+
+        <button type="button" id="add_product" class="btn btn-info mb-3">添加更多原料</button>
+        <div id="produce_order_items">
+            <div class="produce_order_item">
+                <h4>原料信息 1 <button type="button" class="btn btn-danger btn-sm float-right delete-material">删除</button></h4>
+                <div class="row">
+                    <div class="col-md-4">
+                        <div class="form-group">
+                            <label>原材料SKU</label>
+                            <input type="text" class="form-control product-sku-input" name="product_sku_order[]" readonly>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="form-group">
+                            <label>原料名称</label>
+                            <input type="text" class="form-control product-name-input" name="product_name_order[]" list="product_list" placeholder="输入产品名称" required>
+                        
+                        </div>
+
+                    </div>
+                    <div class="col-md-4">
+                        <div class="form-group">
+                            <label for="quantity">原料数量</label>
+                            <input type="number" class="form-control" name="quantity[]" required>
+                        </div>
+                    </div>
+                </div>
+                <hr>
+            </div>
+            <datalist id="product_list">
+                {% for product in products %}
+                    <option value="{{ product[0] }}" data-sku="{{ product[1] }}"></option>
+                {% endfor %}
+            </datalist>
+        </div>
+
+        <div class="d-flex align-items-center mt-3">
+            <button type="submit" class="btn btn-primary" id="submit_button">提交生产单</button>
+            <a href="{{ url_for('view_produce_order') }}"
+                class="btn btn-secondary ml-3"
+                role="button">
+                查看历史生产表
+            </a>
+        </div>
+    </form>
+</div>
+
+
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        let productSelect = document.getElementById("product_filter");
+        let skuInput = document.getElementById("product_sku");
+        attachNameToSkuListeners();
+        productSelect.addEventListener("input", function() {
+            let value = productSelect.value;
+            let options = document.querySelectorAll("#product_list option");
+            let sku = "";
+    
+            for (let i = 0; i < options.length; i++) {
+                if (options[i].value === value) {
+                    sku = options[i].getAttribute("data-sku");
+                    break;
+                }
+            }
+    
+            skuInput.value = sku;
+        });
+    });   
+    
+    
+    function attachNameToSkuListeners() {
+    document.querySelectorAll('.product-name-input').forEach(function(input) {
+        input.addEventListener('input', function() {
+            const value = input.value;
+            const options = document.querySelectorAll("#product_list option");
+            let sku = "";
+            for (let i = 0; i < options.length; i++) {
+                if (options[i].value === value) {
+                    sku = options[i].getAttribute("data-sku");
+                    break;
+                }
+            }
+            const skuInput = input.closest(".produce_order_item").querySelector(".product-sku-input");
+            if (skuInput) skuInput.value = sku;
+        });
+    });
+}
+</script>
+
+<!-- JavaScript to Add More Products -->
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    let index = 2;
+
+    document.getElementById('add_product').addEventListener('click', function() {
+        const produceOrderItems = document.getElementById('produce_order_items');
+        const newItem = document.createElement('div');
+        newItem.classList.add('produce_order_item');
+
+        newItem.innerHTML = `
+           <div class="produce_order_item">
+        <h4>原料信息 ${index} <button type="button" class="btn btn-danger btn-sm float-right delete-material">删除</button></h4>
+        <div class="row">
+            <div class="col-md-4">
+                <div class="form-group">
+                    <label>原材料SKU</label>
+                    <input type="text" class="form-control product-sku-input" name="product_sku_order[]" readonly>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="form-group">
+                    <label>原料名称</label>
+                    <input type="text" class="form-control product-name-input" name="product_name_order[]" list="product_list" placeholder="输入产品名称" required>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="form-group">
+                    <label>原料数量</label>
+                    <input type="number" class="form-control" name="quantity[]" required>
+                </div>
+            </div>
+        </div>
+    </div>
+    <hr>
+        `;
+
+        produceOrderItems.appendChild(newItem);
+        attachNameToSkuListeners(); 
+        index++;
+    });
+
+    // Also move your delete listener here if needed
+     // Delete material row
+     document.addEventListener("click", function(e) {
+        if (e.target.classList.contains("delete-material")) {
+            const item = e.target.closest(".produce_order_item");
+            const hr = item.nextElementSibling;
+            if (item) {
+                item.remove();
+            }
+            if (hr && hr.tagName === "HR") {
+                hr.remove();
+            }
+        }
+    });
+});
+
+    // Trigger AJAX to update produce source when produce_date is selected
+    document.getElementById("produce_date").addEventListener("change", function() {
+        const produceDate = this.value;
+
+        if (produceDate) {
+            fetch(`/generate_produce_source?produce_date=${produceDate}`)
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById("produce_source").value = data.produce_source;
+                })
+                .catch(error => console.error("Error fetching produce source:", error));
+        }
+    });
+       
+</script>
+
+{% endblock %}

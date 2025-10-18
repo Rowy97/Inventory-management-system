@@ -1,0 +1,483 @@
+{% extends "base.html" %}
+
+{% block title %}新增出库单{% endblock %}
+
+{% block content %}
+<style>
+    /* Make '应出数量', '实际出库数量', and '差额' columns shorter and fixed width */
+    th:nth-child(2), td:nth-child(2),
+    th:nth-child(3), td:nth-child(3),
+    th:nth-child(4), td:nth-child(4),
+    th:nth-child(5), td:nth-child(5)  {
+        width: 100px; /* Fixed width for the columns */
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        overflow: hidden;
+    }
+
+    th:nth-child(10), td:nth-child(10),
+    th:nth-child(6), td:nth-child(6)  {
+        width: 70px; /* Fixed width for the columns */
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        overflow: hidden;
+    }
+    th:nth-child(1), td:nth-child(1){
+        width: 420px; /* Fixed width for the columns */
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        overflow: hidden;
+    }
+</style>
+<div class="container-fluid"> 
+
+    <h1 class="mt-4">新增出库单</h1>
+
+    <form action="{{ url_for('inventory_out') }}" method="POST">
+        <!-- Inventory Out Information -->
+        <h3>出库信息</h3>
+        <div class="form-group">
+            <label for="inventory_out_id">出库单号</label>
+            <input type="text" class="form-control" id="inventory_out_id" name="inventory_out_id" value="{{ inventory_out_id }}" readonly>
+        </div>
+        <div class="form-group">
+            <label for="date">出库日期</label>
+            <input type="date" class="form-control" id="date" name="date" value="{{today_date}}" required>
+        </div>
+        <div class="form-group">
+            <label for="invoice">
+                {{ '对应销售单号（生产单为生产单号）' if produce_data else '对应销售单号' }}
+            </label>
+            <input type="text" class="form-control" id="corresponding_order" name="corresponding_order" value="{{ produce_source_data.produce_source if produce_data else sale_id }}" {% if produce_data %}readonly{% endif %} required>
+        </div>
+        <div class="form-group">
+            <label for="invoice">对应支付单号</label>
+            <label for="invoice">
+                {{ '对应支付单号（生产单原料出库无支付单号）' if produce_data else '对应支付单号' }}
+            </label>
+            <input type="text" class="form-control" id="invoice" name="invoice" value="{{ 'A000000' if produce_data else sale_data.invoice }}" {% if produce_data %}readonly{% endif %} required>
+        </div>
+        <div class="form-group">
+            <label for="user_name">操作员</label>
+            <input type="text" class="form-control" id="user_name" name="user_name" value="{{ current_user.username }}" readonly>
+        </div>
+
+        <!-- New Fields for Client and Delivery Way -->
+        <div class="form-group">
+            <label for="client">客户</label>
+            <input type="text" class="form-control" id="client" name="client"
+        value="{{ 'none' if produce_data else sale_data.client }}"
+        {% if produce_data %}readonly{% endif %} required>
+        </div>
+        <div class="form-group">
+            <label for="delivery_way">配送方式</label>
+            <input type="text" class="form-control" id="delivery_way" name="delivery_way"
+            value="{{ 'none' if produce_data else sale_data.delivery_way }}"
+            {% if produce_data %}readonly{% endif %} required>
+        </div>
+        
+        <!-- Inventory Out Order Items -->
+        <h3>出库内容</h3>
+        <div id="inventory_out_order_items">
+            <table class="table table-bordered">
+                <thead>
+                    <tr>
+                        <th>产品代码SKU - 产品名称</th>
+                        <th>应出数量</th>
+                        <th>实出数量</th>
+                        <th>差额</th>
+                        <th>备注</th>
+                        <th>操作</th>
+                        <th>溯源码</th>
+                        <th>数量</th>
+                        <th>二维码</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody id="product_table_body">
+                {% if sale_order_data %}
+                {% for item in sale_order_data %}
+                    <tr>
+                        <td>
+                            <select class="form-control" name="product_sku[]" onchange="updateProductName(this)">
+                                <option value="">请选择SKU-产品名称</option>
+                                {% for product in products %}
+                                    <option value="{{ product['sku'] }}" data-name="{{ product['item'] }}" 
+                                    {% if product['sku'] == item['product_sku'] %} selected {% endif %}>
+                                        {{ product['sku'] }} - {{ product['item'] }}
+                                    </option>
+                                {% endfor %}
+                            </select>                            
+                        </td>
+                        <td><input type="number" class="form-control" name="ideal_quantity[]" value="{{ item['quantity'] }}" required></td>
+                        <td><input type="number" class="form-control" name="true_quantity[]"  value="" required></td>
+                        <td><input type="number" class="form-control" name="diff[]"  readonly></td>
+                        <td><input type="text" class="form-control" name="note[]" ></td>
+                        <td>
+                            <button type="button" class="btn btn-secondary btn-sm fetch-source-btn">查找</button>
+                        </td>
+                        <td colspan="3" class="source-info-cell"></td>
+
+                        <td>
+                            <button type="button" class="btn btn-danger btn-sm delete-product" style="margin-top: 5px;">删除</button>
+                        </td>
+                    </tr>
+                {% endfor %}
+                {% elif produce_data %}
+                {% for item in produce_data %}
+                    <tr>
+                        <td>
+                            <select class="form-control" name="product_sku[]" onchange="updateProductName(this)">
+                                <option value="">请选择SKU-产品名称</option>
+                                {% for product in products %}
+                                    <option value="{{ product['sku'] }}" data-name="{{ product['item'] }}" 
+                                    {% if product['sku'] == item['material_sku'] %} selected {% endif %}>
+                                        {{ product['sku'] }} - {{ product['item'] }}
+                                    </option>
+                                {% endfor %}
+                            </select>                            
+                        </td>
+                        <td><input type="number" class="form-control" name="ideal_quantity[]" value="{{ item['quantity'] }}" required></td>
+                        <td><input type="number" class="form-control" name="true_quantity[]"  value="" required></td>
+                        <td><input type="number" class="form-control" name="diff[]"  readonly></td>
+                        <td><input type="text" class="form-control" name="note[]" ></td>
+                        <td>
+                            <button type="button" class="btn btn-secondary btn-sm fetch-source-btn">查找</button>
+                        </td>
+                        <td colspan="3" class="source-info-cell"></td>
+
+                        <td>
+                            <button type="button" class="btn btn-danger btn-sm delete-product" style="margin-top: 5px;">删除</button>
+                        </td>
+                    </tr>
+                {% endfor %}
+            {% else %}
+                <tr>
+                    <td>
+                        <select class="form-control" name="product_sku[]" onchange="updateProductName(this)">
+                            <option value="">请选择SKU-产品名称</option>
+                            {% for product in products %}
+                                <option value="{{ product['sku'] }}" data-name="{{ product['item'] }}">
+                                    {{ product['sku'] }} - {{ product['item'] }}
+                                </option>
+                            {% endfor %}
+                        </select>                            
+                    </td>
+                    <td><input type="number" class="form-control" name="ideal_quantity[]" required></td>
+                    <td><input type="number" class="form-control" name="true_quantity[]" required></td>
+                    <td><input type="number" class="form-control" name="diff[]" readonly></td>
+                    <td><input type="text" class="form-control" name="note[]"></td>
+                    <td>
+                        <button type="button" class="btn btn-secondary btn-sm fetch-source-btn">查找</button>
+                    </td>
+                    <td colspan="3" class="source-info-cell"></td>
+
+                    <td>
+                        <button type="button" class="btn btn-danger btn-sm delete-product" style="margin-top: 5px;">删除</button>
+                    </td>
+                </tr>
+                {% endif %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Button to Add More Products -->
+        <button type="button" id="add_product" class="btn btn-info mb-3">添加产品</button>
+
+        <!-- Submit Button -->
+        <div class="d-flex mt-4">
+            <button type="submit" class="btn btn-primary mb-3">提交</button>
+        </div>
+    </form>
+</div>
+
+<!-- JavaScript for dynamic table rows and QR code generation -->
+<script>
+// Assuming source_id and source_qty are arrays of selected source_ids and quantities
+
+// When submitting the form, make sure these are passed as lists
+
+    // Trigger fetch when 查找溯源码 button is clicked
+document.getElementById('product_table_body').addEventListener('click', function (event) {
+    if (event.target.classList.contains('fetch-source-btn')) {
+        const row = event.target.closest('tr');
+        fetchAndDisplaySourceIds(row);
+    }
+});
+    function fetchAndDisplaySourceIds(row) {
+    const sku = row.querySelector('select[name="product_sku[]"]').value;
+    const quantity = row.querySelector('input[name="ideal_quantity[]"]').value;
+    const sourceInfoCell = row.querySelector('.source-info-cell');
+    const trueQuantityInput = row.querySelector('input[name="true_quantity[]"]');
+    // Clear existing content and create a new mini-table
+    sourceInfoCell.innerHTML = '';
+    if (sku && quantity) {
+        fetch(`/get_fifo_sources/${sku}/${quantity}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success' || data.status === 'error') {
+                    const sourceIds = data.source_ids || [];
+                    const quantities = data.quantities || [];
+
+                    if (sourceIds.length === 0) {
+                        sourceInfoCell.innerHTML = '<span class="text-danger">无溯源码数据</span>';
+                    } else {
+                        // Create a mini table inside the cell
+                        const table = document.createElement('table');
+                        table.className = 'table table-sm';
+
+                        // Create header row
+                        const container = document.createElement('div');
+                        container.style.display = 'flex';
+                        container.style.flexDirection = 'column';
+                        container.style.gap = '8px';
+
+                        for (let i = 0; i < sourceIds.length; i++) {
+                            const row = document.createElement('div');
+                            row.style.display = 'flex';
+                            row.style.gap = '10px';
+                            row.style.alignItems = 'center';
+
+    // Source ID
+                            const sourceIdInput = document.createElement('input');
+                            sourceIdInput.type = 'text';
+                            sourceIdInput.name = `source_id[${sku}][]`;
+                            sourceIdInput.className = 'form-control';
+                            sourceIdInput.readOnly = true;
+                            sourceIdInput.value = sourceIds[i];
+                            sourceIdInput.style.flex = '1';
+
+    // Quantity
+                            const qtyInput = document.createElement('input');
+                            qtyInput.type = 'number';
+                            qtyInput.name = `source_qty[${sku}][]`;
+                            qtyInput.className = 'form-control';
+                            qtyInput.value = quantities[i];  // Set initial quantity
+                            qtyInput.max = quantities[i]
+                            qtyInput.min = 1
+                            //qtyInput.value = quantities[i];
+                            qtyInput.style.flex = '1';
+
+    // QR Code
+                            const img = document.createElement('img');
+                            img.src = `/generate_qrcode/${encodeURIComponent(sourceIds[i])}`;
+                            img.className = 'qrcode';
+                            img.style.width = '60px';
+                            img.style.height = '60px';
+
+                                // Select Button
+                            const selectButton = document.createElement('button');
+                            selectButton.type = 'button';
+                            selectButton.className = 'btn btn-primary btn-sm select-btn';
+                            selectButton.innerText = '选择';
+                            selectButton.style.flex = '0';
+
+                            // Flag to track selection
+                            let isSelected = false;
+                            
+
+
+                            row.appendChild(sourceIdInput);
+                            row.appendChild(qtyInput);
+                            row.appendChild(img);
+                            row.appendChild(selectButton);
+                            container.appendChild(row);
+                            // Event listener for quantity change to update sum
+                            qtyInput.addEventListener('input', function () {
+                                updateTrueQuantity(row);
+                            });
+                        }
+
+                    sourceInfoCell.appendChild(container);            
+                    }
+
+                    // Optional error alert
+                    if (data.status === 'error') {
+                        alert(data.message);
+                    }
+                }
+            })
+            .catch(error => {
+                console.error('Error fetching source IDs:', error);
+            });
+    }
+}
+//Check if the Form is Being Submitted Correctly:
+document.querySelector('form').addEventListener('submit', function (e) {
+    e.preventDefault();
+    const formData = new FormData(this);
+    for (const [name, value] of formData.entries()) {
+        console.log(name, value);
+    }
+    // Continue with the form submission
+    this.submit();
+});
+document.getElementById('product_table_body').addEventListener('click', function (event) {
+    if (event.target.classList.contains('select-btn')) {
+        const row = event.target.closest('div');
+        const productSku = row.closest('tr').querySelector('select[name="product_sku[]"]').value;
+
+        const qtyInput = row.querySelector(`input[name="source_qty[${productSku}][]"]`);
+        const sourceIdInput = row.querySelector(`input[name="source_id[${productSku}][]"]`);
+        console.log('Selected SKU:', productSku);
+        console.log('Selected Source ID:', sourceIdInput.value);
+        console.log('Selected Quantity:', qtyInput.value);
+        // Update the selection state and update the true_quantity
+        if (event.target.innerText === '选择') {
+            event.target.innerText = '已选择';
+            row.style.backgroundColor = '#c8e6c9'; // Highlight the row
+        } else {
+            event.target.innerText = '选择';
+            row.style.backgroundColor = ''; // Reset the row background
+        }
+
+        // Update the true quantity when any source_id is selected/deselected
+        updateTrueQuantity(row.closest('tr'));
+    }
+});
+
+
+// Update the true quantity based on the sum of source quantities
+function updateTrueQuantity(row) {
+    const sku = row.querySelector('select[name="product_sku[]"]').value;  // Get the SKU for the row
+    const qtyInputs = row.querySelectorAll(`input[name="source_qty[${sku}][]"]`);  // Dynamically target the correct source_qty based on SKU
+    let totalQuantity = 0;
+
+    // Calculate total quantity for the current product
+    qtyInputs.forEach(input => {
+        if (input.closest('div').style.backgroundColor === 'rgb(200, 230, 201)') {  // Green background means selected
+            totalQuantity += parseFloat(input.value) || 0;
+        }
+    });
+
+    // Update the true_quantity input with the sum
+    const trueQuantityInput = row.querySelector('input[name="true_quantity[]"]');
+    trueQuantityInput.value = totalQuantity;
+    updateDifference(row);
+}
+    
+
+document.getElementById('add_product').addEventListener('click', function () {
+        const newRow = document.createElement('tr');
+        newRow.innerHTML = `
+            <td>
+                <select class="form-control" name="product_sku[]">
+                    <option value="">请选择SKU-产品名称</option>
+                    {% for product in products %}
+                        <option value="{{ product['sku'] }}" data-name="{{ product['item'] }}">
+                            {{ product['sku'] }} - {{ product['item'] }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </td>
+            <td><input type="number" class="form-control" name="ideal_quantity[]" required></td>
+            <td><input type="number" class="form-control" name="true_quantity[]" required></td>
+            <td><input type="number" class="form-control" name="diff[]" readonly></td>
+            <td><input type="text" class="form-control" name="note[]" ></td>
+            <td>
+                <button type="button" class="btn btn-secondary btn-sm fetch-source-btn">查找</button>
+            </td>
+            <td colspan="3" class="source-info-cell"></td>
+            <td>
+        <button type="button" class="btn btn-danger btn-sm delete-product" style="margin-top: 5px;">删除</button>
+    </td>
+        `;
+        document.getElementById('product_table_body').appendChild(newRow);
+    });
+
+    // Event listener for deleting a row
+document.getElementById('product_table_body').addEventListener('click', function (event) {
+        if (event.target.classList.contains('delete-product')) {
+            const row = event.target.closest('tr');
+            row.remove();
+        }
+    });
+    
+    //document load automatically get today's date and generate inventory_out_if
+    document.addEventListener('DOMContentLoaded', function() {
+        const today = new Date().toISOString().split('T')[0]; // Get today's date in YYYY-MM-DD format
+        const dateInput = document.getElementById('date');
+        dateInput.value = today; // Set today's date as the value of the date input field
+        // Trigger the change event to generate the inventory_out_id
+        dateInput.dispatchEvent(new Event('change'));
+
+        // When SKU changes
+    });
+    
+    // Generate inventory_in_id and source_ids on date change
+    document.getElementById('date').addEventListener('change', function () {
+        const selectedDate = new Date(this.value);
+        if (isNaN(selectedDate)) return;
+
+        const year = selectedDate.getFullYear();
+        const month = String(selectedDate.getMonth() + 1).padStart(2, '0');
+        const day = String(selectedDate.getUTCDate()).padStart(2, '0');
+
+        fetch(`/generate_inventory_out_id/${year}/${month}/${day}`)
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('inventory_out_id').value = data.inventory_out_id;
+                const batchNumber = data.inventory_out_id.slice(-3);
+
+                const rows = document.querySelectorAll('#product_table_body tr');
+                rows.forEach(row => {
+                    const sku = row.querySelector('select[name="product_sku[]"]').value;
+                    const sourceIdField = row.querySelector('input[name="source_id[]"]');
+                    const qrcodeImg = row.querySelector('.qrcode');
+
+                    if (sku) {
+                        const sourceId = `${sku}${year}${month}${day}${batchNumber}`;
+                        sourceIdField.value = sourceId;
+
+                        if (qrcodeImg) {
+                            qrcodeImg.src = `/generate_qrcode/${encodeURIComponent(sourceId)}`;
+                            qrcodeImg.style.display = 'block';
+                        }
+                    }
+                });
+            })
+            .catch(error => console.error('Error generating inventory_out_id:', error));
+    });
+
+// Event listener for changing the quantity of a source_id
+document.getElementById('product_table_body').addEventListener('input', function (event) {
+    if (event.target.name === 'source_qty[]') {
+        const row = event.target.closest('tr');
+        
+        // Update the true quantity when a source_qty changes
+        updateTrueQuantity(row);
+        updateDifference(row);
+    }
+});
+    
+
+    // Function to update the difference field (差额)
+    function updateDifference(row) {
+        const idealQuantityField = row.querySelector('input[name="ideal_quantity[]"]');
+        const trueQuantityField = row.querySelector('input[name="true_quantity[]"]');
+        const diffField = row.querySelector('input[name="diff[]"]');
+        
+        const idealQuantity = parseFloat(idealQuantityField.value) || 0;
+        const trueQuantity = parseFloat(trueQuantityField.value) || 0;
+        
+        // Calculate the difference (差额)
+        const difference = idealQuantity - trueQuantity;
+        diffField.value = difference;
+    }
+
+    // Add event listener to handle changes in either ideal quantity or true quantity
+    document.getElementById('product_table_body').addEventListener('input', function (event) {
+        if (event.target.name === 'ideal_quantity[]' || event.target.name === 'true_quantity[]') {
+            const row = event.target.closest('tr');
+            updateDifference(row);
+            updateTrueQuantity(row);
+        }
+    });
+
+    // Optional: Set up the initial difference calculation when the page loads for pre-filled rows
+    document.querySelectorAll('#product_table_body tr').forEach(row => {
+        updateDifference(row);
+    });
+</script>
+{% endblock %}
+

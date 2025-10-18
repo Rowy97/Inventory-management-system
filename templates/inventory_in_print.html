@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+
+{% block title %}入库单 - {{ inventory_in.inventory_in_id }}{% endblock %}
+
+{% block content %}
+    <h2 class="my-4">入库记录 - {{ inventory_in.inventory_in_id }}</h2>
+
+    <div class="mb-4">
+        <p><strong>入库单号:</strong> {{ inventory_in.inventory_in_id }}</p>
+        <p><strong>入库类型:</strong> {{ inventory_in.in_type }}</p>
+        <p><strong>入库日期:</strong> {{ inventory_in.date }}</p>
+        <p><strong>对应单号:</strong> {{ inventory_in.corresponding_order }}</p>
+        <p><strong>操作人:</strong> {{ inventory_in.user_name }}</p>
+    </div>
+
+    <table class="table table-bordered">
+        <thead>
+            <tr>
+                <th>#</th>
+                <th>SKU</th>
+                <th>产品名称</th>
+                <th>应入数量</th>
+                <th>验收数量</th>
+                <th>差额</th>
+                <th>溯源码</th>
+                <th>二维码</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in items %}
+            <tr>
+                <td>{{ loop.index }}</td>
+                <td>{{ item.product_sku }}</td>
+                <td>{{ item.product_name }}</td>
+                <td>{{ item.ideal_quantity }}</td>
+                <td>{{ item.true_quantity }}</td>
+                <td>{{ item.diff }}</td>
+                <td>{{ item.source_id }}</td>
+                <td><img src="{{ item.qr_code }}" alt="QR Code" width="80" height="80"></td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <div class="mt-4 text-center d-print-none">
+        <button class="btn btn-primary" onclick="window.print()">打印</button>
+    </div>
+{% endblock %}
+
+
+
+

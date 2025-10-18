@@ -1,0 +1,97 @@
+{% extends "base.html" %}
+
+{% block title %}盘点表{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <h1 class="mt-4">盘点表</h1>
+
+    <form action="{{ url_for('view_inventory_sold_out') }}" onsubmit="return confirmSubmit();" method="POST">
+        <input type="hidden" name="user_name" value="{{ current_user.username }}">
+        <div class="form-group">
+            <label for="date">日期</label>
+            <input type="date" class="form-control" name="date" id="date" required>
+        </div>
+        <div class="form-group">
+            <label for="user_name">操作员</label>
+            <input type="text" class="form-control" id="user_name_display" value="{{ current_user.username }}" readonly>
+            <input type="hidden" name="user_name" value="{{ current_user.username }}">
+        </div>
+        <h2 class="mt-4">库存追踪盘点</h2>
+        <table class="table table-bordered">
+            <thead>
+                <tr>
+                    <th>产品SKU</th>
+                    <th>产品名称</th>
+                    <th>当前库存数量</th>
+                    <th>溯源码</th>
+                    <th>盘点数量</th>
+                    <th>差额</th>
+                    <th>备注</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for sku, name, qty, source_id in source_track_data %}
+                <tr>
+                    <td>
+                        {{ sku }}
+                        <input type="hidden" name="product_sku[]" value="{{ sku }}">
+                    </td>
+                    <td>
+                        {{ name }}
+                        <input type="hidden" name="product_name[]" value="{{ name }}">
+                    </td>
+                    <td>
+                        <span class="inventory-qty">{{ qty }}</span>
+                        <input type="hidden" name="inventory_quantity[]" value="{{ qty }}">
+                    </td>
+                    <td>
+                        {{ source_id }}
+                        <input type="hidden" name="source_id[]" value="{{ source_id }}">
+                    </td>
+                    <td>
+                        <input type="number" name="true_quantity[]" class="form-control true-qty" required>
+                    </td>
+                    <td>
+                        <input type="number" name="diff[]" class="form-control diff" readonly>
+                    </td>
+                    <td>
+                        <input type="text" name="note[]" class="form-control" maxlength="100">
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <button type="submit" class="btn btn-primary mt-3">提交盘点表</button>
+        <!-- View Inventory Update Button -->
+        <a href="{{ url_for('view_inventory_update') }}" class="btn btn-secondary mt-3 ml-2">查看盘点记录</a>
+        <a href="{{ url_for('inventory_order') }}" class="btn btn-secondary mt-3 ml-2">返回</a>
+    </form>
+    
+</div>
+
+<script>
+    function confirmSubmit() {
+        return confirm("你确定要提交盘点表吗？提交后将覆盖库存信息，无法撤销。");
+    }
+    document.addEventListener('DOMContentLoaded', function () {
+        const rows = document.querySelectorAll('tbody tr');
+
+        rows.forEach(row => {
+            const inventoryQty = parseFloat(row.querySelector('.inventory-qty').textContent);
+            const trueQtyInput = row.querySelector('.true-qty');
+            const diffInput = row.querySelector('.diff');
+
+            trueQtyInput.addEventListener('input', () => {
+                const trueQty = parseFloat(trueQtyInput.value) || 0;
+                const diff = inventoryQty - trueQty;
+                diffInput.value = diff;
+            });
+        });
+    });
+</script>
+{% endblock %}
+
+
+

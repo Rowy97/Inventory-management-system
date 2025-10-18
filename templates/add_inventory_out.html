@@ -1,0 +1,121 @@
+{% extends "base.html" %}
+
+{% block title %}提交出库单{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <h1 class="mt-4">提交出库单</h1>
+
+    <form action="{% url 'sale_search' %}" method="POST">
+        {% csrf_token %}
+        
+        <!-- Order Information -->
+        <div class="row">
+            <div class="col-md-6">
+                <div class="form-group">
+                    <label for="date">出库日期</label>
+                    <input type="date" class="form-control" id="date" name="date" required>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="form-group">
+                    <label for="corresponding_order">关联订单</label>
+                    <input type="text" class="form-control" id="corresponding_order" name="corresponding_order" required>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-6">
+                <div class="form-group">
+                    <label for="client">客户名称</label>
+                    <input type="text" class="form-control" id="client" name="client" required>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="form-group">
+                    <label for="delivery_way">交货方式</label>
+                    <input type="text" class="form-control" id="delivery_way" name="delivery_way" required>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-6">
+                <div class="form-group">
+                    <label for="user_name">操作人员</label>
+                    <input type="text" class="form-control" id="user_name" name="user_name" required>
+                </div>
+            </div>
+        </div>
+
+        <!-- Product Information -->
+        <h3>出库单内容</h3>
+        <button type="button" id="add_product" class="btn btn-info mb-3">添加更多商品</button>
+        <div id="product_items">
+            <div class="row">
+                <div class="col-md-4">
+                    <div class="form-group">
+                        <label for="product_sku">商品SKU</label>
+                        <input type="text" class="form-control" name="product_sku_order[]" required>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="form-group">
+                        <label for="product_name">商品名称</label>
+                        <input type="text" class="form-control" name="product_name_order[]" required>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="form-group">
+                        <label for="out_quantity">出库数量</label>
+                        <input type="number" class="form-control" name="out_quantity[]" required>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Submit Buttons -->
+        <div class="button-container">
+            <button type="submit" class="btn btn-primary">提交出库单</button>
+            <a href="{{ url_for('add_inventory_out') }}" class="btn btn-success">已付款</a>
+        </div>
+    </form>
+</div>
+
+<!-- JavaScript to Add More Products -->
+<script>
+    let index = 2; // Start from 2 as the first item is already present
+
+    document.getElementById('add_product').addEventListener('click', function() {
+        const productItems = document.getElementById('product_items');
+        const newItem = document.createElement('div');
+        
+        newItem.classList.add('row');
+        newItem.innerHTML = `
+            <div class="col-md-4">
+                <div class="form-group">
+                    <label for="product_sku">商品SKU</label>
+                    <input type="text" class="form-control" name="product_sku_order[]" required>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="form-group">
+                    <label for="product_name">商品名称</label>
+                    <input type="text" class="form-control" name="product_name_order[]" required>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="form-group">
+                    <label for="out_quantity">出库数量</label>
+                    <input type="number" class="form-control" name="out_quantity[]" required>
+                </div>
+            </div>
+        `;
+
+        productItems.appendChild(newItem);
+        index++; // Increment the index for the next product
+    });
+</script>
+
+{% endblock %}

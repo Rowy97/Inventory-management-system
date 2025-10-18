@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+
+{% block title %}注册新销售代表{% endblock %}
+
+{% block content %}
+    <div class="container">
+
+        <h1>添加销售代表</h1>
+        <form action="{{ url_for('register_new_sale_rep') }}" method="POST">
+            <input type="text" name="sales_name" placeholder="销售代表用户名（下单用）" required>
+            <input type="text" name="sales_username" placeholder="销售代表全名">
+            <button type="submit" name="submit_type" value="register_sales" class="btn btn-primary">添加销售代表</button>
+        </form>
+        <hr>
+        <h3>现有销售代表</h3>
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>销售代表用户名（下单时显示）</th>
+                    <th>销售代表全名</th>
+                    <th>操作</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for sales_rep in sales_reps %}
+                    <tr>
+                        <td>{{ sales_rep[1] }}</td>
+                        <td>{{ sales_rep[2] }}</td>
+                        <td>
+                            <form action="{{ url_for('delete_sale_rep', sales_name=sales_rep[1]) }}" method="POST">
+                                <button type="submit" onclick="return confirm('确定要删除此销售代表吗?')">删除</button>
+                            </form>
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+{% endblock %}

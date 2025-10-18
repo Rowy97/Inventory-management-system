@@ -1,0 +1,114 @@
+{% extends "base.html" %}
+
+{% block title %}生产单查询{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <h1 class="mt-4">生产单查询</h1>
+    <form method="GET" action="{{ url_for('download_produce') }}" class="form-inline">
+        <label for="start_date">开始日期:</label>
+        <input type="date" name="start_date" id="start_date" class="form-control mx-2" required>
+      
+        <label for="end_date">结束日期:</label>
+        <input type="date" name="end_date" id="end_date" class="form-control mx-2" required>
+      
+        <button type="submit" class="btn btn-secondary ml-2">导出生产表</button>
+    </form>
+    <h3 class="mt-4">未生产</h3>
+    {% set unproduced = produce_list | selectattr('status', 'equalto', 0) | list %}
+    {% if unproduced %}
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>生产编号</th>
+                <th>生产日期</th>
+                <th>来源单号</th>
+                <th>产品名称</th>
+                <th>SKU</th>
+                <th>销售单号</th>
+                <th>原材料已出库</th>
+                <th>计划数量</th>
+                <th>操作员</th>
+                <th>操作</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for p in unproduced %}
+            <tr>
+                <td>{{ p.produce_id }}</td>
+                <td>{{ p.production_date }}</td>
+                <td>{{ p.produce_source }}</td>
+                <td>{{ p.product_name }}</td>
+                <td>{{ p.product_sku }}</td>
+                <td>{{ p.sale_id }}</td>
+                <td>
+                    {% if p.status2 == 0 %}
+                      否
+                    {% else %}
+                      是
+                    {% endif %}
+                  </td>
+                <td>{{ p.plan_quantity }}</td>
+                <td>{{ p.user_name }}</td>
+                <td>
+                    <a href="{{ url_for('produce_order_print', produce_source=p.produce_source) }}" class="btn btn-primary btn-sm">查看</a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <div class="alert alert-warning">无未生产数据。</div>
+    {% endif %}
+
+    <hr>
+    <h3 class="mt-4">已完成</h3>
+    {% set completed = produce_list | selectattr('status', 'equalto', 1) | list %}
+    {% if completed %}
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>生产编号</th>
+                <th>生产日期</th>
+                <th>来源单号</th>
+                <th>产品名称</th>
+                <th>SKU</th>
+                <th>销售单号</th>
+                <th>原材料已出库</th>
+                <th>计划数量</th>
+                <th>操作员</th>
+                <th>操作</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for p in completed %}
+            <tr>
+                <td>{{ p.produce_id }}</td>
+                <td>{{ p.production_date }}</td>
+                <td>{{ p.produce_source }}</td>
+                <td>{{ p.product_name }}</td>
+                <td>{{ p.product_sku }}</td>
+                <td>{{ p.sale_id }}</td>
+                <td>
+                    {% if p.status2 == 0 %}
+                      否
+                    {% else %}
+                      是
+                    {% endif %}
+                  </td>
+                <td>{{ p.plan_quantity }}</td>
+                <td>{{ p.user_name }}</td>
+                <td>
+                    <a href="{{ url_for('produce_order_print', produce_source=p.produce_source) }}" class="btn btn-primary btn-sm">查看</a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <div class="alert alert-warning">无已完成数据。</div>
+    {% endif %}
+    
+
+</div>
+{% endblock %}

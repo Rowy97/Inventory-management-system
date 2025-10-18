@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+
+{% block title %}注册新用户{% endblock %}
+
+{% block content %}
+    <div class="container">
+        <h1>注册新用户</h1>
+        <form action="/register" method="POST">
+            <input type="text" name="username" placeholder="用户名" required>
+            <input type="password" name="password" placeholder="密码" required>
+
+            <!-- Dropdown to select role -->
+            <label for="role">选择权限</label>
+            <select name="role" required>
+                <option value="admin">管理员</option>
+                <option value="purchase">下单员</option>
+                <option value="general">通用</option>
+            </select>
+
+            <button type="submit" name="submit_type" value="register_user" class="btn btn-primary">注册用户</button>
+        </form>
+        <hr>
+        <h3>系统内用户:</h3>
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>用户名</th>
+                    <th>权限</th>
+                    <th>操作</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for user in users %}
+                    <tr>
+                        <td>{{ user['username'] }}</td> 
+                        <td>{{ user['role'] }}</td>
+                        <td>
+                            {% if user['role'] != 'admin' %}
+                            <form action="{{ url_for('delete_user', user_id=user['id']) }}" method="POST">
+                                <button type="submit" onclick="return confirm('确定要删除此用户吗?')">删除</button>
+                            </form>
+                            {% endif %}
+                        </td>        
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        <hr>
+
+{% endblock %}

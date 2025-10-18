@@ -1,0 +1,236 @@
+
+{% extends "base.html" %}
+
+{% block title %}销售单{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <h1 class="mt-4">销售单</h1>
+
+    <form action="{{ url_for('sale_order') }}" method="POST">
+
+        <!-- Sale Information -->
+        <h3>销售单信息</h3>
+        <div class="row">
+            <div class="col-md-3">
+                <div class="form-group">
+                    <label for="sale_id">销售单号</label>
+                    <input type="text" class="form-control" id="sale_id" name="sale_id" value="{{ sale.sale_id }}" readonly>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="form-group">
+                    <label for="sale_date">销售日期</label>
+                    <input type="date" class="form-control" id="sale_date" name="sale_date" value="{{ sale.sale_date }}" readonly>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="form-group">
+                    <label for="rep">销售代表</label>
+                    <input type="text" class="form-control" id="rep" name="rep" value="{{ sale.rep }}" readonly>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="form-group">
+                    <label for="user_name">操作员</label>
+                    <input type="text" class="form-control" id="user_name" name="user_name" value="{{ sale.user_name }}" readonly>
+                </div>
+            </div>
+        </div>
+        
+        <div class="row">
+            <div class="col-md-4">
+                <div class="form-group">
+                    <label for="client">客户名称</label>
+                    <input type="text" class="form-control" id="client" name="client" value="{{ sale.client }}" readonly>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="form-group">
+                    <label for="delivery_way">配送方式</label>
+                    <input type="text" class="form-control" id="delivery_way" name="delivery_way" value="{{ sale.delivery_way }}" readonly>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="form-group">
+                    <label for="pay_way">支付单号</label>
+                    <input type="text" class="form-control" id="invoice" name="invoice" value="{{ sale.invoice if sale.invoice else '未填写' }}" readonly>
+                </div>
+            </div>
+        </div>
+
+        <hr>
+        <!-- Sale Order Information -->
+        <h3>销售单内容</h3>
+<div id="sale_order_items">
+    {% if sale_order_items %}
+        <div class="sale_order_item">
+            <table class="table table-bordered">
+                <thead>
+                    <tr>
+                        <th style="width: 100px;">产品SKU</th>
+                        <th style="width: 300px;">产品名称</th>
+                        <th style="width: 80px;">单价</th>
+                        <th style="width: 80px;">数量</th>
+                        <th style="width: 100px;">总价</th>
+                        <th style="width: 120px;">备注</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in sale_order_items %}
+                    <tr>
+                        <td><input type="text" class="form-control" name="product_sku[]" value="{{ item.product_sku }}" readonly></td>
+                        <td><input type="text" class="form-control" name="product_name[]" value="{{ item.product_name }}" readonly></td>
+                        <td><input type="number" step="0.01" class="form-control" name="unit_price[]" value="{{ item.unit_price }}" readonly></td>
+                        <td><input type="number" class="form-control" name="quantity[]" value="{{ item.quantity }}" readonly></td>
+                        <td><input type="number" step="0.01" class="form-control" name="price[]" value="{{ item.price }}" readonly></td>
+                        <td><input type="text" class="form-control" name="note[]" value="{{ item.note }}" readonly></td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+                <tfoot>
+                    <tr>
+                        <td colspan="4" class="text-end"><strong>总计</strong></td>
+                        <td><input type="text" class="form-control" id="total" readonly></td>
+                        <td></td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+    {% else %}
+        <p>没有找到销售单项目。</p>
+    {% endif %}
+    <div class="row"> 
+        <div class="col-md-6">
+            <div class="form-group">
+                <label for="user_name">运费</label>
+                <input type="number" class="form-control" id="delivery_fee" name="amount_received" value="{{ sale.delivery_fee }}" readonly>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="form-group">
+                <label for="user_name">税 （税率: {{ sale.tax_rate }}%）</label>
+                <input type="number" class="form-control" step="0.01" id="tax" name="tax" value="{{ sale.tax }}" readonly>
+            </div>          
+        </div>    
+    </div>
+        <hr>
+    <div class="row">
+        <div class="col-md-6">
+            <div class="form-group">
+                <label for="user_name"><strong>订单总价</strong></label>
+                <input type="text" class="form-control" id="grand_total" name="grand_total" value="{{ sale.grand_total }}" readonly>
+            </div>
+        </div>
+    </div>
+<hr>
+<h3>支付记录</h3>
+<table class="table table-bordered">
+    <thead>
+        <tr>
+            <th>支付日期</th>
+            <th>支付金额</th>
+            <th>支付方式</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% if payments %}
+            {% for payment in payments %}
+            <tr>
+                <td>{{ payment.payment_date }}</td>
+                <td>{{ payment.amount }}</td>
+                <td>{{ payment.payment_method }}</td>
+            </tr>
+            {% endfor %}
+        {% else %}
+            <tr>
+                <td colspan="3" class="text-center">暂无支付记录</td>
+            </tr>
+        {% endif %}
+    </tbody>
+</table>
+<hr>
+</div>
+    <h3>明细</h3>
+    <div class="row">
+        <div class="col-md-6">
+            <div class="form-group">
+                <label for="user_name"><strong>订单总价</strong></label>
+                <input type="text" class="form-control" id="grand_total" name="grand_total" value="{{ sale.grand_total }}" readonly>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="form-group">
+                <label for="user_name"><strong>已收款</strong></label>
+                <input type="text" class="form-control" id="amount_received" name="amount_received" value="{{ sale.amount_received }}" readonly>
+            </div>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-md-6">
+            <div class="form-group">
+                <label for="user_name"><strong>待付</strong></label>
+                <input type="text" class="form-control" id="amount_remained" name="amount_remained" value="{{ sale.amount_remained }}" readonly>
+            </div>
+        </div>
+    </div>
+</div>
+
+</div>
+    </form>
+    <div class="mt-4">
+        {% if current_user.role in ['admin', 'purchase'] %}
+        <a href="{{ url_for('edit_sale', sale_id=sale.sale_id) }}" class="btn btn-warning">修改此销售单</a>
+            {% if sale.status != 2 %}
+                <form action="{{ url_for('delete_sale', sale_id=sale.sale_id) }}" method="POST" style="display:inline;" onsubmit="return confirm('确定要删除此销售单吗？此操作不可恢复！');">
+                    <button type="submit" class="btn btn-danger ml-2">删除此销售单</button>
+                </form>
+                <!-- 已收款按钮 -->
+                <form action="{{ url_for('mark_sale_paid', sale_id=sale.sale_id) }}" method="POST" style="display:inline;" onsubmit="return confirm('确定已收款？');">
+                    <button type="submit" class="btn btn-success ml-2"
+                        {% if sale.status == 1 or sale.status == 2 %}disabled{% endif %}>
+                        {% if sale.status == 1 or sale.status == 2 %}已收款{% else %}确认收款{% endif %}
+                    </button>
+                </form>
+                <!-- 出库按钮 -->
+                <a href="{{ url_for('inventory_out', sale_id=sale.sale_id) }}" 
+   class="btn btn-info ml-2" 
+   {% if sale.status == 2 %} 
+       onclick="return false;" 
+       style="pointer-events: none; opacity: 0.5;" 
+   {% else %}
+       onclick="return confirm('确认出库？');"
+   {% endif %}>
+    {% if sale.status == 2 %}
+        已出库
+    {% else %}
+        出库
+    {% endif %}
+</a>
+            {% else %}
+                <button class="btn btn-danger ml-2" disabled>订单无法删除</button>
+                <button class="btn btn-danger ml-2" disabled>此订单已出库</button>
+            {% endif %}
+                
+        {% endif %} <!-- New button to modifyy sale order -->
+        
+    </div>
+    
+    <!-- Go Back Button -->
+    <div class="mt-4">
+        <a href="{{ url_for('sale_search') }}" class="btn btn-secondary">返回列表</a>
+        <a href="{{ url_for('sale_order') }}" class="btn btn-primary ml-2">创建新销售单</a>  <!-- New button to create a new sale order -->
+    </div>
+</div>
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        let total = 0;
+        document.querySelectorAll('input[name="price[]"]').forEach(function (input) {
+            let val = parseFloat(input.value) || 0;
+            total += val;
+        });
+        document.getElementById('total').value = total.toFixed(2);
+    });
+</script>
+    
+{% endblock %}

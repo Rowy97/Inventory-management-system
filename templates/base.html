@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>{% block title %}Inventory Management{% endblock %}</title>
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <style>
+        body {
+            display: flex;
+            min-height: 100vh;
+            flex-direction: column;
+        }
+        #wrapper {
+            display: flex;
+            width: 100%;
+            height: 100vh;
+        }
+        #sidebar-wrapper {
+            min-height: 100vh;
+            width: 250px;
+            background-color: #f8f9fa;
+            border-right: 1px solid #dee2e6;
+        }
+        #page-content-wrapper {
+            width: 100%;
+            padding: 20px;
+        }
+        .sidebar-heading {
+            padding: 15px;
+            font-size: 1.5rem;
+            background-color: #e9ecef;
+            text-align: center;
+        }
+        .list-group-item {
+            border: none;
+            padding: 12px 20px;
+            cursor: pointer;
+        }
+        .list-group-item:hover {
+            background-color: #e2e6ea;
+        }
+    </style>
+</head>
+<body>
+
+<div id="wrapper">
+    <!-- Sidebar -->
+    <div id="sidebar-wrapper">
+        <div class="sidebar-heading">库存管理系统</div>
+        <div class="list-group list-group-flush">
+
+            <!-- Common Links for All Users -->
+            <a href="{{ url_for('index') }}" class="list-group-item list-group-item-action">主页</a>
+            <a href="{{ url_for('sale_search') }}" class="list-group-item list-group-item-action">销售单查询</a>
+            <a href="{{ url_for('inventory') }}" class="list-group-item list-group-item-action">库存查询</a>
+
+            <!-- Admin Links -->
+            {% if current_user.role == 'admin' %}
+                <a href="{{ url_for('view_inventory_in') }}" class="list-group-item list-group-item-action">查找入库单</a>
+                <a href="{{ url_for('view_inventory_out') }}" class="list-group-item list-group-item-action">查找出库单</a>
+                <a href="{{ url_for('inventory_in') }}" class="list-group-item list-group-item-action">入库单</a>
+                <a href="{{ url_for('inventory_out') }}" class="list-group-item list-group-item-action">出库单</a>
+                <a href="{{ url_for('sale_order') }}" class="list-group-item list-group-item-action">销售单</a>
+                <a href="{{ url_for('purchase_order') }}" class="list-group-item list-group-item-action">采购单</a>
+                <a href="{{ url_for('produce_order') }}" class="list-group-item list-group-item-action">生产单</a>
+                <a href="{{ url_for('produce_search') }}" class="list-group-item list-group-item-action">生产单查找</a>
+                <a href="{{ url_for('inventory_order') }}" class="list-group-item list-group-item-action">盘点表</a>
+                <a href="{{ url_for('exchange_return_order') }}" class="list-group-item list-group-item-action">退换货审批单</a>
+                <a href="{{ url_for('register') }}" class="list-group-item list-group-item-action">新用户注册</a>
+                <a href="{{ url_for('register_new_sale_rep') }}" class="list-group-item list-group-item-action">新销售代表注册</a>
+                <a href="{{ url_for('add_sku') }}" class="list-group-item list-group-item-action">新产品添加</a>
+            
+            <!-- purchase Links -->
+            {% elif current_user.role == 'purchase' %}
+                <a href="{{ url_for('view_inventory_in') }}" class="list-group-item list-group-item-action">查找入库单</a>
+                <a href="{{ url_for('view_inventory_out') }}" class="list-group-item list-group-item-action">查找出库单</a>
+                <a href="{{ url_for('inventory_in') }}" class="list-group-item list-group-item-action">入库单</a>
+                <a href="{{ url_for('inventory_out') }}" class="list-group-item list-group-item-action">出库单</a>
+                <a href="{{ url_for('sale_order') }}" class="list-group-item list-group-item-action">销售单</a>
+                <a href="{{ url_for('purchase_order') }}" class="list-group-item list-group-item-action">采购单</a>
+                <a href="{{ url_for('produce_order') }}" class="list-group-item list-group-item-action">生产单</a>
+                <a href="{{ url_for('inventory_order') }}" class="list-group-item list-group-item-action">盘点表</a>
+                <a href="{{ url_for('exchange_return_order') }}" class="list-group-item list-group-item-action">退换货审批单</a>
+            
+            <!-- General User Links -->
+            {% elif current_user.role == 'general' %}
+                <!-- General users only see inventory-related pages (already included above) -->
+            
+            {% endif %}
+
+            <!-- Logout Link -->
+            <a href="{{ url_for('logout') }}" class="list-group-item list-group-item-action text-danger">退出系统</a>
+        </div>
+    </div>
+
+<!-- Page Content -->
+<div id="page-content-wrapper">
+    <div class="container-fluid">
+
+        <!-- Flash messages -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+          {% if messages %}
+            {% for category, message in messages %}
+              <div class="alert alert-{{ category }} alert-dismissible fade show mt-3" role="alert">
+                {{ message }}
+                <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                  <span aria-hidden="true">&times;</span>
+                </button>
+              </div>
+            {% endfor %}
+          {% endif %}
+        {% endwith %}
+
+        {% block content %}
+        {% endblock %}
+    </div>
+</div>
+
+</div>
+
+<!-- Bootstrap JS, jQuery, and Popper.js -->
+<script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.4.4/dist/umd/popper.min.js"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+
+</body>
+</html>

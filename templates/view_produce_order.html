@@ -1,0 +1,33 @@
+{% extends 'base.html' %}
+
+{% block title %}查看生产表{% endblock %}
+
+{% block content %}
+    <h2 class="my-4">历史生产表</h2>
+    <table class="table table-bordered">
+        <thead>
+            <tr>
+                <th>生产单号</th>
+                <th>生产日期</th>
+                <th>产品名称</th>
+                <th>产品SKU</th>
+                <th>关联销售单号（可选）</th>
+                <th>计划生产数量</th>
+                <th>操作员</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for row in produce %}
+            <tr>
+                <td>{{ row[0] }}</td>  <!-- produce_source -->
+                <td>{{ row[1] }}</td>  <!-- date -->
+                <td>{{ row[2] }}</td>  <!-- product_sku -->
+                <td>{{ row[3] }}</td>  <!-- product_name -->
+                <td>{{ row[4] }}</td>  <!-- sale order id -->
+                <td>{{ row[5] }}</td>  <!-- plan_quantity -->
+                <td>{{ row[6] }}</td>  <!-- username -->
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+{% endblock %}

@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+
+{% block title %}打印生产单{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h1 class="mt-4">生产单详情</h1>
+    <h3>生产单号: {{ produce_order.produce_source }}</h3>
+    <p>生产日期: {{ produce_order.production_date }}</p>
+    <p>产品名称: {{ produce_order.product_name }}</p>
+    <p>产品SKU: {{ produce_order.product_sku }}</p>
+    <p>计划生产数量: {{ produce_order.plan_quantity }}</p>
+    <p>销售单号: {{ produce_order.sale_id }}</p>
+    <p>操作员: {{ produce_order.user_name }}</p>
+
+    <h4>原料信息:</h4>
+    <ul>
+        {% for order_item in produce_order_items %}
+            <li>原材料名称 : {{ order_item.material_name }} - SKU: {{ order_item.product_sku }} - 数量: {{ order_item.quantity }}</li>
+        {% endfor %}
+    </ul>
+
+    <!-- QR Code -->
+ 
+    <!-- Print Button -->
+    <button onclick="window.print()" class="btn btn-success mt-3">打印生产单</button>
+    <!-- Redirect to Inventory In Production Button -->
+    {% if produce_order.status == 1 %}
+    <a class="btn btn-secondary mt-3 disabled" aria-disabled="true">订单已入库</a>
+{% else %}
+    <a href="{{ url_for('inventory_in', produce_id=produce_order.produce_id) }}" class="btn btn-primary mt-3">入库</a>
+    
+    {% endif %}
+
+    {% if produce_order.status2 == 1 %}
+    <a class="btn btn-secondary mt-3 disabled" aria-disabled="true">原材料已出库</a>
+    {% else %}
+    <a href="{{ url_for('inventory_out_produce', id=produce_order.produce_source) }}" class="btn btn-primary mt-3">原材料出库</a>
+    
+    {% endif %}
+    
+</div>
+
+<script>
+    // This script will open the print dialog when the print button is clicked
+    function printPage() {
+        window.print();
+    }
+</script>
+{% endblock %}
